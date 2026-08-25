@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>first-screen-patterns-scratch</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#000000" />
+<style>
+  @font-face {
+    font-family: "Oceanic Text Mono";
+    src: url("assets/fonts/OceanicTextMono-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-display: block;
+  }
+  @font-face {
+    font-family: "SF Pro Text";
+    src: url("assets/fonts/SFProText-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-display: block;
+  }
+  @font-face {
+    font-family: "SF Pro Text";
+    src: url("assets/fonts/SFProText-Semibold.otf") format("opentype");
+    font-weight: 590;
+    font-display: block;
+  }
+  @font-face {
+    font-family: "ABC Diatype Variable";
+    src: url("assets/fonts/ABCDiatypeVariable.ttf") format("truetype");
+    font-weight: 100 900;
+    font-display: block;
+  }
+
+  :root {
+    --w: 402px;
+    --h: 874px;
+    --sheet-h: 681px;
+    /* the sheet runs a few px past the composer edge — at fractional zoom the
+       seam would otherwise land between pixels and leak a dark hairline */
+    --sheet-bleed: 684px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #16151a;
+    overflow: hidden;
+    user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
+  }
+  body { display: grid; place-items: center; }
+
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: var(--h);
+    transform-origin: center center;
+  }
+
+  .frame {
+    position: relative;
+    width: var(--w);
+    height: var(--h);
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* both screens share one layout; only the palette differs */
+  .screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--w);
+    height: var(--sheet-bleed);
+  }
+  .screen .time {
+    position: absolute;
+    left: 24px;
+    top: 21px;
+    width: 100px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 1.5px;
+    font-family: "SF Pro Text";
+    font-weight: 590;
+    font-size: 17px;
+    line-height: 22px;
+  }
+  .screen .island {
+    position: absolute;
+    left: 139px;
+    top: 14px;
+    width: 124px;
+    height: 36px;
+    border-radius: 30.631px;
+    background: #000;
+  }
+  .screen .levels {
+    position: absolute;
+    left: 278px;
+    top: 21px;
+    width: 100px;
+    height: 22px;
+  }
+  .screen .levels img { display: block; width: 100px; height: 22px; }
+  .screen .menu {
+    position: absolute;
+    left: 16px;
+    top: 66px;
+    width: 40px;
+    height: 8px;
+  }
+  .screen .menu img { display: block; width: 40px; height: 8px; }
+  .screen .status-row {
+    position: absolute;
+    left: 15px;
+    top: 98px;
+    height: 23px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .screen .status-row .sym {
+    display: block;
+    width: 17px;
+    height: 16px;
+  }
+  .screen .status-row .txt,
+  .screen .skip {
+    font-family: "ABC Diatype Variable";
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 20px;
+  }
+  .screen .status-row .rule {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+  }
+  .screen .skip {
+    position: absolute;
+    left: 15px;
+    top: 633px;
+    height: 23px;
+  }
+  .screen .skip .rule {
+    position: absolute;
+    left: 0;
+    top: 22px;
+    width: 32px;
+    height: 1px;
+  }
+  .screen .phrase {
+    position: absolute;
+    left: 14px;
+    top: 141px;
+    margin: 0;
+    font-family: "Oceanic Text Mono";
+  }
+
+  /* revealed screen — 20993 */
+  .screen.dark { background: #000; color: #fff; }
+  .screen.dark .status-row .sym { filter: invert(1); }
+  .screen.dark .status-row .rule { background: rgba(255, 255, 255, 0.29); }
+  .screen.dark .skip .rule { background: rgba(255, 255, 255, 0.28); }
+  .screen.dark .phrase {
+    width: 337px;
+    font-size: 40px;
+    line-height: 52px;
+  }
+
+  /* scratch sheet — 20992, real text over the foil, torn away by an svg mask */
+  .screen.light {
+    color: #000;
+    z-index: 5;
+    -webkit-mask-image: url(#tear);
+    mask-image: url(#tear);
+  }
+  .screen.light .status-row .rule { background: rgba(0, 0, 0, 0.29); }
+  .screen.light .skip .rule { background: rgba(0, 0, 0, 0.28); }
+  .screen.light .phrase {
+    width: 360px;
+    font-size: 28px;
+    line-height: 37px;
+  }
+  .foil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--w);
+    height: var(--sheet-bleed);
+    display: block;
+  }
+  .mask-defs { position: absolute; width: 0; height: 0; }
+
+  .crumbs {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--w);
+    height: var(--h);
+    display: block;
+    z-index: 6;
+    pointer-events: none;
+  }
+  .catcher {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--w);
+    height: var(--sheet-h);
+    z-index: 7;
+  }
+
+  /* input — frame -3,681,405,203 */
+  .input {
+    position: absolute;
+    left: -3px;
+    top: 681px;
+    width: 405px;
+    height: 203px;
+    background: #fff;
+    overflow: hidden;
+    z-index: 15;
+  }
+  .input .placeholder {
+    position: absolute;
+    left: 23px;
+    top: 20px;
+    height: 31px;
+    margin: 0;
+    font-family: "Oceanic Text Mono";
+    font-size: 28px;
+    line-height: 31px;
+    letter-spacing: -0.84px;
+    color: rgba(0, 0, 0, 0.12);
+    white-space: nowrap;
+  }
+  .input .caret {
+    position: absolute;
+    left: 19px;
+    top: 20px;
+    width: 1px;
+    height: 35px;
+    background: #000;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .input .plus {
+    position: absolute;
+    left: 32px;
+    top: 126px;
+    width: 20px;
+    height: 20px;
+  }
+  .input .plus img { display: block; width: 20px; height: 20px; }
+  .input .ring {
+    position: absolute;
+    top: 113px;
+    width: 46px;
+    height: 46px;
+  }
+  .input .ring img { display: block; width: 46px; height: 46px; }
+  .input .ring.l { left: 19px; }
+  .input .ring.r { left: 343px; }
+  .input .wave { position: absolute; display: block; }
+  .input .wave img { display: block; width: 1px; height: 100%; }
+
+  .caption {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 18px);
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-family: "ABC Diatype Variable", system-ui, sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+  }
+
+  @media (max-width: 430px) {
+    .caption { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="frame">
+      <div class="screen dark">
+        <div class="time">9:41</div>
+        <div class="levels"><img src="assets/levels-light.svg" alt="" width="100" height="22" /></div>
+        <div class="menu"><img src="assets/menu-light.svg" alt="" width="40" height="8" /></div>
+        <div class="status-row">
+          <img class="sym" src="assets/hexagonpath.png" alt="" width="17" height="16" />
+          <span class="txt">your photos</span>
+          <div class="rule"></div>
+        </div>
+        <p class="phrase">A lot of your questions lately are really the same question: &ldquo;am I doing enough?&rdquo;</p>
+        <div class="skip">skip<div class="rule"></div></div>
+      </div>
+
+      <svg class="mask-defs" aria-hidden="true">
+        <defs>
+          <mask id="tear" maskUnits="userSpaceOnUse" x="0" y="0" width="402" height="684">
+            <rect x="0" y="0" width="402" height="684" fill="#fff" />
+            <g id="holes" fill="#000"></g>
+          </mask>
+        </defs>
+      </svg>
+
+      <div class="screen light" id="sheet">
+        <canvas class="foil" id="foil"></canvas>
+        <div class="time">9:41</div>
+        <div class="island"></div>
+        <div class="levels"><img src="assets/levels-dark.svg" alt="" width="100" height="22" /></div>
+        <div class="menu"><img src="assets/menu-dark.svg" alt="" width="40" height="8" /></div>
+        <div class="status-row">
+          <img class="sym" src="assets/hexagonpath.png" alt="" width="17" height="16" />
+          <span class="txt">patterns</span>
+          <div class="rule"></div>
+        </div>
+        <p class="phrase">I think I know what&rsquo;s been bothering you lately</p>
+        <div class="skip">skip<div class="rule"></div></div>
+      </div>
+
+      <canvas class="crumbs" id="crumbs"></canvas>
+      <div class="catcher" id="catcher"></div>
+
+      <div class="input">
+        <p class="placeholder">Start chat</p>
+        <div class="caret"></div>
+        <div class="ring l"><img src="assets/circle-left.svg" alt="" width="46" height="46" /></div>
+        <div class="plus"><img src="assets/plus.svg" alt="" width="20" height="20" /></div>
+        <div class="ring r"><img src="assets/circle-right.svg" alt="" width="46" height="46" /></div>
+        <div class="wave" style="left:356px;top:133px;height:6px"><img src="assets/wave-2.svg" alt="" /></div>
+        <div class="wave" style="left:363px;top:129px;height:14px"><img src="assets/wave-1.svg" alt="" /></div>
+        <div class="wave" style="left:370px;top:132px;height:8px"><img src="assets/wave-3.svg" alt="" /></div>
+        <div class="wave" style="left:376px;top:134px;height:4px"><img src="assets/wave-4.svg" alt="" /></div>
+      </div>
+    </div>
+    <div class="caption">iPhone 17 · 402 × 874 · scratch it off · double click to reset</div>
+  </div>
+
+<script>
+(() => {
+  const W = 402;
+  const H = 681;
+  const BLEED = 3;
+  const FRAME_H = 874;
+  const CELL = 8;
+  const BRUSH = 28;
+  const MAX_CRUMBS = 340;
+  const CHUNK = 350;
+  const FLAKE_COLORS = ["#e7edf4", "#c5ced8", "#9aa7b4", "#d9c4ee", "#b7e0f4", "#efe3c4", "#ffffff"];
+  const SVGNS = "http://www.w3.org/2000/svg";
+
+  const stage = document.getElementById("stage");
+  const sheet = document.getElementById("sheet");
+  const catcher = document.getElementById("catcher");
+  const holes = document.getElementById("holes");
+  const foilEl = document.getElementById("foil");
+  const crumbsEl = document.getElementById("crumbs");
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+
+  function surface(el, w, h) {
+    el.width = Math.round(w * dpr);
+    el.height = Math.round(h * dpr);
+    const ctx = el.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return ctx;
+  }
+
+  const foil = surface(foilEl, W, H + BLEED);
+  const crumbCtx = surface(crumbsEl, W, FRAME_H);
+
+  function fit() {
+    const pad = window.innerWidth <= 430 ? 0 : 80;
+    const s = Math.min((window.innerWidth - pad) / W, (window.innerHeight - pad) / FRAME_H, 1);
+    stage.style.transform = `scale(${s})`;
+  }
+  fit();
+  window.addEventListener("resize", fit);
+
+  // ---- the foil, straight from the scratch-panel concept ----
+
+  const FH = H + BLEED;
+
+  // baked once; the sheen below rides over it every frame, exactly as in
+  // scratch-panel, where the texture and the moving highlight are separate
+  const texture = document.createElement("canvas");
+  texture.width = Math.round(W * dpr);
+  texture.height = Math.round(FH * dpr);
+  const texCtx = texture.getContext("2d");
+
+  function paintTexture() {
+    const ctx = texCtx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, FH);
+
+    const base = ctx.createLinearGradient(0, 0, W, FH);
+    base.addColorStop(0, "#dfe4ea");
+    base.addColorStop(0.45, "#bdc5ce");
+    base.addColorStop(1, "#d4dae2");
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, W, FH);
+
+    for (let x = 0; x < W; x++) {
+      const v = 168 + Math.random() * 72;
+      ctx.fillStyle = `rgba(${v}, ${v + 5}, ${v + 10}, ${0.12 + Math.random() * 0.22})`;
+      ctx.fillRect(x, 0, 1, FH);
+    }
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const img = ctx.getImageData(0, 0, texture.width, texture.height);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const n = (Math.random() - 0.5) * 28;
+      d[i] = Math.max(0, Math.min(255, d[i] + n));
+      d[i + 1] = Math.max(0, Math.min(255, d[i + 1] + n));
+      d[i + 2] = Math.max(0, Math.min(255, d[i + 2] + n));
+    }
+    ctx.putImageData(img, 0, 0);
+    ctx.restore();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    ctx.strokeStyle = "#1a1a1a";
+    ctx.lineWidth = 1;
+    for (let i = -FH; i < W; i += 7) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + FH, FH);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    const sheen = ctx.createLinearGradient(0, 0, W, FH);
+    sheen.addColorStop(0, "rgba(255,255,255,0.42)");
+    sheen.addColorStop(0.45, "rgba(255,255,255,0)");
+    sheen.addColorStop(1, "rgba(0,0,0,0.08)");
+    ctx.fillStyle = sheen;
+    ctx.fillRect(0, 0, W, FH);
+  }
+  paintTexture();
+
+  function paintSheen(ctx, t) {
+    const gx = W * (0.15 + Math.sin(t * 0.7) * 0.35);
+    const g = ctx.createLinearGradient(gx - 80, 0, gx + 160, FH);
+    g.addColorStop(0, "rgba(255,255,255,0)");
+    g.addColorStop(0.42, "rgba(176, 220, 255, 0.12)");
+    g.addColorStop(0.5, "rgba(255,255,255,0.42)");
+    g.addColorStop(0.58, "rgba(255, 176, 220, 0.12)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, FH);
+  }
+
+  function drawFoil(t) {
+    foil.setTransform(dpr, 0, 0, dpr, 0, 0);
+    foil.globalCompositeOperation = "copy";
+    foil.drawImage(texture, 0, 0, W, FH);
+    foil.globalCompositeOperation = "source-atop";
+    paintSheen(foil, t);
+    foil.globalCompositeOperation = "source-over";
+  }
+
+  // ---- one layer of flakes, punched out of the mask ----
+
+  function makeGrid() {
+    const cols = Math.ceil(W / CELL) + 1;
+    const rows = Math.ceil(H / CELL) + 1;
+    const grid = new Array(rows);
+    let alive = 0;
+    for (let r = 0; r < rows; r++) {
+      const row = (grid[r] = new Array(cols));
+      for (let c = 0; c < cols; c++) {
+        const cx = c * CELL + CELL * 0.5 + (Math.random() - 0.5) * 2.4;
+        const cy = r * CELL + CELL * 0.5 + (Math.random() - 0.5) * 2.4;
+        const n = 5 + ((Math.random() * 3) | 0);
+        const rot = Math.random() * Math.PI;
+        let d = "";
+        for (let i = 0; i < n; i++) {
+          const a = rot + (i / n) * Math.PI * 2 + (Math.random() - 0.5) * 0.32;
+          const rad = CELL * (0.7 + Math.random() * 0.52);
+          const px = cx + Math.cos(a) * rad;
+          const py = cy + Math.sin(a) * rad * (0.72 + Math.random() * 0.42);
+          d += (i ? "L" : "M") + px.toFixed(1) + " " + py.toFixed(1);
+        }
+        row[c] = { cx, cy, d: d + "Z", alive: true };
+        alive++;
+      }
+    }
+    return { grid, rows, cols, alive, total: alive };
+  }
+
+  let flakes = makeGrid();
+
+  // the holes go into a handful of <path> chunks rather than one giant one:
+  // only the last chunk's `d` is rewritten per frame, so the string the
+  // browser has to reparse stays small no matter how much has been rubbed off
+  let chunk = null;
+  let chunkText = "";
+  let chunkCount = 0;
+  let pending = "";
+
+  function newChunk() {
+    chunk = document.createElementNS(SVGNS, "path");
+    chunkText = "";
+    chunkCount = 0;
+    holes.appendChild(chunk);
+  }
+  newChunk();
+
+  function flushHoles() {
+    if (!pending) return;
+    chunkText += pending;
+    pending = "";
+    chunk.setAttribute("d", chunkText);
+    if (chunkCount >= CHUNK) newChunk();
+  }
+
+  const dust = [];
+  let lastX = null;
+  let lastY = null;
+  let scratching = false;
+  let crumbled = false;
+  let strokeSeen = new Set();
+
+  function spawn(x, y, ux, uy, burst) {
+    if (dust.length >= MAX_CRUMBS) dust.splice(0, 20);
+    const speed = burst ? 1.2 + Math.random() * 3.4 : 0.6 + Math.random() * 2.2;
+    const drift = (Math.random() - 0.5) * (burst ? 2.2 : 1.3);
+    dust.push({
+      x,
+      y,
+      vx: (ux || 0) * speed * 0.7 + drift,
+      vy: (uy || 0) * speed * 0.35 + (burst ? -1.1 - Math.random() * 2.2 : -0.4 - Math.random() * 1.4),
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * 0.28,
+      life: 1,
+      decay: 0.014 + Math.random() * 0.018,
+      w: 2 + Math.random() * 5,
+      h: 1 + Math.random() * 2.4,
+      color: FLAKE_COLORS[(Math.random() * FLAKE_COLORS.length) | 0],
+      kind: Math.random() < 0.1 ? "spark" : "flake",
+      g: 0.2 + Math.random() * 0.1
+    });
+  }
+
+  function tearAt(x, y, ux, uy) {
+    const { grid, rows, cols } = flakes;
+    const r0 = Math.max(0, Math.floor((y - BRUSH) / CELL) - 1);
+    const r1 = Math.min(rows - 1, Math.floor((y + BRUSH) / CELL) + 1);
+    const c0 = Math.max(0, Math.floor((x - BRUSH) / CELL) - 1);
+    const c1 = Math.min(cols - 1, Math.floor((x + BRUSH) / CELL) + 1);
+    const R2 = BRUSH * BRUSH;
+
+    for (let r = r0; r <= r1; r++) {
+      for (let c = c0; c <= c1; c++) {
+        const f = grid[r][c];
+        if (!f.alive) continue;
+        const key = r + "," + c;
+        if (strokeSeen.has(key)) continue;
+        const dx = f.cx - x;
+        const dy = f.cy - y;
+        if (dx * dx + dy * dy > R2) continue;
+        strokeSeen.add(key);
+        f.alive = false;
+        flakes.alive--;
+        pending += f.d;
+        chunkCount++;
+        if (Math.random() < 0.34) spawn(f.cx, f.cy, ux, uy, false);
+      }
+    }
+  }
+
+  function stroke(x, y) {
+    const dx = lastX === null ? 0 : x - lastX;
+    const dy = lastY === null ? 0 : y - lastY;
+    const dist = Math.hypot(dx, dy);
+    const len = dist || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+
+    if (lastX === null) {
+      tearAt(x, y, ux, uy);
+    } else {
+      // walk the gap between events, otherwise a fast drag skips patches
+      const steps = Math.max(1, Math.ceil(dist / 4));
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        tearAt(lastX + dx * t, lastY + dy * t, ux, uy);
+      }
+    }
+    lastX = x;
+    lastY = y;
+  }
+
+  function crumble() {
+    if (crumbled) return;
+    crumbled = true;
+    const { grid, rows, cols } = flakes;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const f = grid[r][c];
+        if (!f.alive) continue;
+        f.alive = false;
+        if (Math.random() < 0.06) spawn(f.cx, f.cy, Math.random() - 0.5, -0.8, true);
+      }
+    }
+    flakes.alive = 0;
+    // nothing left worth masking, so drop the sheet instead of growing the path
+    sheet.style.display = "none";
+  }
+
+  function drawCrumbs() {
+    crumbCtx.clearRect(0, 0, W, FRAME_H);
+    for (let i = dust.length - 1; i >= 0; i--) {
+      const p = dust[i];
+      p.vy += p.g;
+      p.vx *= 0.96;
+      p.vy *= 0.988;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.life -= p.decay;
+      if (p.life <= 0 || p.y > FRAME_H + 20) {
+        dust.splice(i, 1);
+        continue;
+      }
+      crumbCtx.save();
+      crumbCtx.globalAlpha = Math.max(0, p.life);
+      crumbCtx.translate(p.x, p.y);
+      crumbCtx.rotate(p.rot);
+      if (p.kind === "spark") {
+        crumbCtx.fillStyle = "#fff";
+        crumbCtx.fillRect(-0.7, -2.8, 1.4, 5.6);
+        crumbCtx.fillRect(-2.8, -0.7, 5.6, 1.4);
+      } else {
+        crumbCtx.beginPath();
+        crumbCtx.moveTo(-p.w / 2, -p.h / 2);
+        crumbCtx.lineTo(p.w / 2, (-p.h / 2) * 0.35);
+        crumbCtx.lineTo((p.w / 2) * 0.75, p.h / 2);
+        crumbCtx.lineTo((-p.w / 2) * 0.65, p.h / 2);
+        crumbCtx.closePath();
+        crumbCtx.fillStyle = p.color;
+        crumbCtx.fill();
+        crumbCtx.strokeStyle = "rgba(255,255,255,0.45)";
+        crumbCtx.lineWidth = 0.4;
+        crumbCtx.stroke();
+      }
+      crumbCtx.restore();
+    }
+  }
+
+  function tick(now) {
+    drawFoil(now / 1000);
+    flushHoles();
+    drawCrumbs();
+    if (!crumbled && flakes.alive / flakes.total < 0.14) crumble();
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---- input ----
+
+  function localPos(e) {
+    const r = catcher.getBoundingClientRect();
+    return {
+      x: ((e.clientX - r.left) / r.width) * W,
+      y: ((e.clientY - r.top) / r.height) * H
+    };
+  }
+
+  catcher.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    scratching = true;
+    strokeSeen = new Set();
+    catcher.setPointerCapture?.(e.pointerId);
+    const { x, y } = localPos(e);
+    lastX = lastY = null;
+    stroke(x, y);
+  });
+
+  catcher.addEventListener("pointermove", (e) => {
+    if (!scratching) return;
+    e.preventDefault();
+    const { x, y } = localPos(e);
+    stroke(x, y);
+  });
+
+  function end() {
+    scratching = false;
+    lastX = lastY = null;
+  }
+  catcher.addEventListener("pointerup", end);
+  catcher.addEventListener("pointercancel", end);
+
+  catcher.addEventListener("dblclick", () => {
+    dust.length = 0;
+    crumbled = false;
+    scratching = false;
+    lastX = lastY = null;
+    strokeSeen = new Set();
+    flakes = makeGrid();
+    holes.textContent = "";
+    pending = "";
+    newChunk();
+    sheet.style.display = "";
+    paintTexture();
+  });
+})();
+</script>
+<script src="../shared/touch-cursor.js" data-target=".frame"></script>
+</body>
+</html>
