@@ -318,7 +318,7 @@
         <div class="menu"><img src="assets/menu.svg" alt="" width="40" height="8" /></div>
         <div class="status-row">
           <img class="sym" src="assets/sparkles.png" alt="" width="15" height="18" />
-          <span class="txt">Just for fun</span>
+          <span class="txt">just for fun</span>
           <div class="rule"></div>
         </div>
       </div>
@@ -336,7 +336,7 @@
         <div class="wave" style="left:376px;top:134px;height:4px"><img src="assets/wave-4.svg" alt="" /></div>
       </div>
     </div>
-    <div class="caption">iPhone 17 · 402 × 874 · catch one</div>
+    <div class="caption">iPhone 17 · 402 × 874 · catch one · double click to replay</div>
   </div>
 
 <script>
@@ -488,6 +488,12 @@
       bob: rand(0, Math.PI * 2),
       bobRate: rand(0.5, 1.4),
       held: false,
+      // glyphs that re-enter mid-flight are already part of the stream; only
+      // the opening batch gets a wait and an entrance, see openWith()
+      wait: 0,
+      enter: 1,
+      ox: 0,
+      oy: 0,
       x: 0,
       y: 0
     };
@@ -508,13 +514,42 @@
   }
 
   const swarm = [];
-  for (let i = 0; i < COUNT; i++) swarm.push(spawn(false));
-
   const held = [];
+  const drags = new Map();
 
   function syncCaught() {
     caughtEl.textContent = held.map((p) => p.ch).join("");
     placeholderEl.style.display = held.length ? "none" : "";
+  }
+
+  // the screen holds still for a beat, then the swarm arrives as one gust:
+  // the wave starts at the top-right, where the current comes from, and
+  // sweeps down-left, each glyph flying the last stretch of its own path
+  const HOLD = 0.55;
+  const SWEEP = 0.62;
+  const ENTER = 0.42;
+  const DRIFT = 96;
+
+  let clock = 0;
+
+  function openWith() {
+    swarm.length = 0;
+    held.length = 0;
+    drags.clear();
+    syncCaught();
+    clock = 0;
+
+    const far = Math.hypot(W, H);
+    for (let i = 0; i < COUNT; i++) {
+      const p = spawn(false);
+      const reach = Math.hypot(W - p.x, p.y) / far;
+      p.wait = HOLD + reach * SWEEP + rand(-0.05, 0.05);
+      p.enter = 0;
+      const k = DRIFT / Math.hypot(p.vx, p.vy);
+      p.ox = -p.vx * k;
+      p.oy = -p.vy * k;
+      swarm.push(p);
+    }
   }
 
   let last = performance.now();
@@ -522,12 +557,14 @@
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    clock += dt;
 
     backCtx.clearRect(0, 0, W, H);
     frontCtx.clearRect(0, 0, W, H);
 
     for (let i = 0; i < swarm.length; i++) {
       const p = swarm[i];
+      if (clock < p.wait) continue;
       if (!p.held) {
         p.bob += p.bobRate * dt;
         p.x += p.vx * dt;
@@ -538,14 +575,31 @@
           continue;
         }
       }
-      const s = p.held ? p.size * 1.18 : p.size;
+      let s = p.held ? p.size * 1.18 : p.size;
+      let ox = 0;
+      let oy = 0;
+      let alpha = 1;
+      if (p.enter < 1) {
+        p.enter = Math.min(1, p.enter + dt / ENTER);
+        const e = 1 - Math.pow(1 - p.enter, 3);
+        // the offset melts into the real position, so the handover to the
+        // drift is seamless — nothing jumps on the frame the entrance ends
+        ox = p.ox * (1 - e);
+        oy = p.oy * (1 - e);
+        alpha = Math.min(1, p.enter * 2.4);
+        s *= 0.52 + 0.48 * e;
+      }
+
       // a caught glyph always comes forward, so it can't hide behind the text
       const ctx = p.back && !p.held ? backCtx : frontCtx;
-      ctx.drawImage(sprite(p.ch), p.x - s / 2, p.y - s / 2, s, s);
+      if (alpha < 1) ctx.globalAlpha = alpha;
+      ctx.drawImage(sprite(p.ch), p.x + ox - s / 2, p.y + oy - s / 2, s, s);
+      if (alpha < 1) ctx.globalAlpha = 1;
     }
 
     requestAnimationFrame(frame);
   }
+  openWith();
   requestAnimationFrame(frame);
 
   function local(e) {
@@ -561,7 +615,7 @@
     let bestD = Infinity;
     for (let i = swarm.length - 1; i >= 0; i--) {
       const p = swarm[i];
-      if (!!p.back !== wantBack || p.held) continue;
+      if (clock < p.wait || !!p.back !== wantBack || p.held) continue;
       const d = Math.hypot(p.x - x, p.y - y);
       const reach = Math.max(18, p.size * 0.62);
       if (d < reach && d < bestD) {
@@ -581,8 +635,6 @@
     }
     return nearest(x, y, false) || nearest(x, y, true);
   }
-
-  const drags = new Map();
 
   canvas.addEventListener("pointerdown", (e) => {
     const p = local(e);
@@ -619,6 +671,8 @@
   }
   canvas.addEventListener("pointerup", end);
   canvas.addEventListener("pointercancel", end);
+
+  document.addEventListener("dblclick", openWith);
 })();
 </script>
 <script src="../shared/touch-cursor.js" data-target=".frame"></script>

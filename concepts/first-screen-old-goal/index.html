@@ -36,6 +36,9 @@
     --w: 402px;
     --h: 874px;
     --sheet-h: 681px;
+    /* the page runs a few px past the composer edge — at fractional zoom the
+       seam would otherwise land between pixels and leak a dark hairline */
+    --sheet-bleed: 3px;
     --green: #d4ffa2;
   }
 
@@ -94,7 +97,7 @@
     left: 0;
     top: 0;
     width: var(--w);
-    height: var(--sheet-h);
+    height: calc(var(--sheet-h) + var(--sheet-bleed));
     overflow: hidden;
     z-index: 1;
   }
@@ -105,6 +108,8 @@
     background: var(--green);
   }
 
+  /* the lifted paper sits above the app's own chrome — it is a physical sheet
+     coming towards you, so whatever it passes over goes under it */
   .flap {
     position: absolute;
     left: 0;
@@ -112,6 +117,7 @@
     width: var(--w);
     height: var(--sheet-h);
     display: block;
+    z-index: 3;
     pointer-events: none;
   }
 
@@ -150,22 +156,26 @@
     top: 0;
     width: var(--w);
     height: var(--sheet-h);
-    z-index: 20;
     pointer-events: none;
   }
+  /* the app's own row goes under the flap, the phone's status bar over it */
+  .chrome.app { z-index: 2; }
+  .chrome.device { z-index: 20; }
   .chrome .time,
-  .chrome .status-row p,
+  .chrome .status-row,
   .chrome .status-row .rule,
+  .chrome .status-row .sym,
   .chrome .levels img,
   .chrome .menu img {
     transition: color 260ms ease, background-color 260ms ease, filter 260ms ease;
   }
   /* Figma covers only the green sheet; on the black slide the chrome inverts */
-  .chrome.on-dark .time,
-  .chrome.on-dark .status-row p { color: #fff; }
-  .chrome.on-dark .status-row .rule { background: rgba(255, 255, 255, 0.3); }
-  .chrome.on-dark .levels img,
-  .chrome.on-dark .menu img { filter: invert(1); }
+  .frame.on-dark .time,
+  .frame.on-dark .status-row { color: #fff; }
+  .frame.on-dark .status-row .rule { background: rgba(255, 255, 255, 0.3); }
+  .frame.on-dark .status-row .sym,
+  .frame.on-dark .levels img,
+  .frame.on-dark .menu img { filter: invert(1); }
 
   /* status bar — frame 0,0,402,62 */
   .time {
@@ -219,47 +229,30 @@
     display: block;
   }
 
-  /* status — frame 15,98,126,23 */
+  /* status — frame 15,98,23 tall, width follows the label */
   .status-row {
     position: absolute;
     left: 15px;
     top: 98px;
-    width: 126px;
     height: 23px;
-    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    color: #000;
+  }
+  .status-row .sym {
+    display: block;
+    width: 18px;
+    height: 15px;
   }
   .status-row .rule {
     position: absolute;
-    left: 1px;
-    top: 22px;
-    width: 115px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     height: 1px;
     background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(14.4px);
-    -webkit-backdrop-filter: blur(14.4px);
-  }
-  .status-row p {
-    position: absolute;
-    left: -1px;
-    top: 0;
-    margin: 0;
-    width: 119px;
-    height: 20px;
-    white-space: nowrap;
-    color: #000;
-    font-size: 0;
-  }
-  .status-row .sym {
-    font-family: "SF Pro Text";
-    font-weight: 400;
-    font-size: 14px;
-    line-height: 20px;
-  }
-  .status-row .sp {
-    font-family: "SF Pro Text";
-    font-weight: 400;
-    font-size: 18px;
-    line-height: 20px;
   }
   .status-row .txt {
     font-family: "ABC Diatype Variable";
@@ -283,13 +276,13 @@
     position: absolute;
     left: 23px;
     top: 20px;
-    width: 144px;
+    width: auto;
     height: 31px;
     margin: 0;
     font-family: "Oceanic Text Mono";
-    font-size: 25px;
+    font-size: 28px;
     line-height: 31px;
-    letter-spacing: -0.75px;
+    letter-spacing: -0.84px;
     color: rgba(0, 0, 0, 0.12);
     white-space: nowrap;
   }
@@ -343,7 +336,7 @@
 </head>
 <body>
   <div class="stage" id="stage">
-    <div class="frame">
+    <div class="frame" id="frame">
       <div class="under" id="under">
         <p>Lisbon,<br />the trip<br />you keep<br />postponing</p>
       </div>
@@ -360,18 +353,23 @@
             <div class="line" style="top:370px;width:291px"><img src="assets/line-114.svg" alt="" /></div>
           </div>
         </div>
-        <canvas class="flap" id="flap"></canvas>
       </div>
 
-      <div class="chrome" id="chrome">
+      <div class="chrome app">
+        <div class="menu"><img src="assets/menu.svg" alt="" width="40" height="8" /></div>
+        <div class="status-row">
+          <img class="sym" src="assets/boltheart.png" alt="" width="18" height="15" />
+          <span class="txt">insights</span>
+          <div class="rule"></div>
+        </div>
+      </div>
+
+      <canvas class="flap" id="flap"></canvas>
+
+      <div class="chrome device">
         <div class="time">9:41</div>
         <div class="island"></div>
         <div class="levels"><img src="assets/levels.svg" alt="" width="100" height="22" /></div>
-        <div class="menu"><img src="assets/menu.svg" alt="" width="40" height="8" /></div>
-        <div class="status-row">
-          <p><span class="sym">&#x1003C6;</span><span class="sp">&nbsp;</span><span class="txt">your photos</span></p>
-          <div class="rule"></div>
-        </div>
       </div>
 
       <div class="input">
@@ -395,20 +393,15 @@
   const H = 681;
   const CX = W;
   const CY = H;
-  const SUM = W + H;
 
-  // the fold runs at 45°, so both legs of the corner are always equal
-  const DX = -Math.SQRT1_2;
-  const DY = -Math.SQRT1_2;
-  const REST_L = 40;
-  const GONE_L = SUM + 80;
+  const REST_LEG = 40;
   // it slides away on its own only once the page is nearly gone
   const OPEN_AREA = 0.1 * W * H;
 
   const stage = document.getElementById("stage");
+  const frame = document.getElementById("frame");
   const sheet = document.getElementById("sheet");
   const front = document.getElementById("front");
-  const chrome = document.getElementById("chrome");
   const under = document.getElementById("under");
   const canvas = document.getElementById("flap");
   const ctx = canvas.getContext("2d");
@@ -427,6 +420,10 @@
   window.addEventListener("resize", fit);
 
   const SHEET = [[0, 0], [W, 0], [W, H], [0, H]];
+  // the page is clipped a little lower than it folds, so the strip hidden
+  // behind the composer stays green instead of showing the black underneath
+  const BLEED = 3;
+  const CLIP = [[0, 0], [W, 0], [W, H + BLEED], [0, H + BLEED]];
 
   function clipHalf(poly, mx, my, nx, ny, keepPositive) {
     const sign = keepPositive ? 1 : -1;
@@ -446,9 +443,9 @@
     return out;
   }
 
-  function reflect(p, mx, my) {
-    const d = (p[0] - mx) * DX + (p[1] - my) * DY;
-    return [p[0] - 2 * d * DX, p[1] - 2 * d * DY];
+  function reflect(p, mx, my, nx, ny) {
+    const d = (p[0] - mx) * nx + (p[1] - my) * ny;
+    return [p[0] - 2 * d * nx, p[1] - 2 * d * ny];
   }
 
   function polyArea(p) {
@@ -460,35 +457,42 @@
     return Math.abs(a) / 2;
   }
 
-  // L is the length of each leg of the folded corner
-  function paint(L) {
-    if (L < 1) {
+  // `tip` is where the grabbed corner has been dragged to. The crease is the
+  // perpendicular bisector between the corner and the tip, so the hinge turns
+  // with the drag on its own: straight up folds off the bottom edge, sideways
+  // folds off the right one, and anything between gives the slanted corner.
+  function paint(tip) {
+    const dx = tip[0] - CX;
+    const dy = tip[1] - CY;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) {
       front.style.clipPath = "none";
       ctx.clearRect(0, 0, W, H);
       return W * H;
     }
 
-    const mx = CX - L / 2;
-    const my = CY - L / 2;
-    const nx = -L;
-    const ny = -L;
+    const nx = dx / len;
+    const ny = dy / len;
+    const mx = CX + dx / 2;
+    const my = CY + dy / 2;
 
     const keep = clipHalf(SHEET, mx, my, nx, ny, true);
     const folded = clipHalf(SHEET, mx, my, nx, ny, false);
+    const shown = clipHalf(CLIP, mx, my, nx, ny, true);
 
-    front.style.clipPath = keep.length < 3
+    front.style.clipPath = shown.length < 3
       ? "polygon(0px 0px, 0px 0px, 0px 0px)"
-      : "polygon(" + keep.map((p) => `${p[0]}px ${p[1]}px`).join(", ") + ")";
+      : "polygon(" + shown.map((p) => `${p[0]}px ${p[1]}px`).join(", ") + ")";
 
     ctx.clearRect(0, 0, W, H);
     if (folded.length >= 3) {
-      const flap = folded.map((p) => reflect(p, mx, my));
+      const flap = folded.map((p) => reflect(p, mx, my, nx, ny));
       ctx.beginPath();
       ctx.moveTo(flap[0][0], flap[0][1]);
       for (let i = 1; i < flap.length; i++) ctx.lineTo(flap[i][0], flap[i][1]);
       ctx.closePath();
-      const span = Math.min(320, Math.max(64, L * 1.3));
-      const g = ctx.createLinearGradient(mx, my, mx + DX * span, my + DY * span);
+      const span = Math.min(320, Math.max(64, len * 0.92));
+      const g = ctx.createLinearGradient(mx, my, mx + nx * span, my + ny * span);
       g.addColorStop(0, "#fbfbf9");
       g.addColorStop(1, "#dcdcd6");
       ctx.fillStyle = g;
@@ -498,24 +502,44 @@
     return keep.length < 3 ? 0 : polyArea(keep);
   }
 
-  let fold = REST_L;
-  let grabL = REST_L;
-  let grabU = 0;
+  const REST = [CX - REST_LEG, CY - REST_LEG];
+  let tip = REST.slice();
+  let grabX = 0;
+  let grabY = 0;
   let dragging = false;
   let opened = false;
   let anim = null;
 
-  paint(fold);
+  paint(tip);
+
+  // the corner cannot be pushed past its own edges, or the fold would invert
+  function clamp(x, y) {
+    return [Math.min(x, CX), Math.min(y, CY)];
+  }
+
+  // far enough along the current direction that the crease clears the sheet
+  function goneTip() {
+    const dx = tip[0] - CX;
+    const dy = tip[1] - CY;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = dx / len;
+    const ny = dy / len;
+    let reach = 0;
+    for (const q of SHEET) reach = Math.max(reach, (q[0] - CX) * nx + (q[1] - CY) * ny);
+    const need = 2 * reach + 120;
+    return [CX + nx * need, CY + ny * need];
+  }
 
   function animate(to, ms, done) {
-    const from = fold;
+    const fx = tip[0];
+    const fy = tip[1];
     const t0 = performance.now();
     if (anim) cancelAnimationFrame(anim);
     function step(now) {
       const t = Math.min(1, (now - t0) / ms);
       const e = 1 - Math.pow(1 - t, 3);
-      fold = from + (to - from) * e;
-      paint(fold);
+      tip = [fx + (to[0] - fx) * e, fy + (to[1] - fy) * e];
+      paint(tip);
       if (t < 1) anim = requestAnimationFrame(step);
       else if (done) done();
     }
@@ -526,15 +550,15 @@
     dragging = false;
     opened = true;
     sheet.style.pointerEvents = "none";
-    chrome.classList.add("on-dark");
-    animate(GONE_L, 540);
+    frame.classList.add("on-dark");
+    animate(goneTip(), 540);
   }
 
   function close() {
     opened = false;
     sheet.style.pointerEvents = "";
-    chrome.classList.remove("on-dark");
-    animate(REST_L, 520);
+    frame.classList.remove("on-dark");
+    animate(REST.slice(), 520);
   }
 
   function local(e) {
@@ -548,12 +572,13 @@
   sheet.addEventListener("pointerdown", (e) => {
     if (opened) return;
     const p = local(e);
-    if (Math.hypot(p.x - (CX - fold), p.y - (CY - fold)) > 92 &&
+    if (Math.hypot(p.x - tip[0], p.y - tip[1]) > 92 &&
         Math.hypot(p.x - CX, p.y - CY) > 100) return;
     e.preventDefault();
     dragging = true;
-    grabL = fold;
-    grabU = p.x + p.y;
+    // hold the corner where it was grabbed instead of snapping it to the finger
+    grabX = tip[0] - p.x;
+    grabY = tip[1] - p.y;
     sheet.setPointerCapture?.(e.pointerId);
     if (anim) cancelAnimationFrame(anim);
   });
@@ -562,9 +587,8 @@
     if (!dragging) return;
     e.preventDefault();
     const p = local(e);
-    // the crease tracks the finger along the 45° axis, so the corner stays square
-    fold = Math.min(SUM, Math.max(0, grabL + grabU - (p.x + p.y)));
-    if (paint(fold) <= OPEN_AREA) open();
+    tip = clamp(p.x + grabX, p.y + grabY);
+    if (paint(tip) <= OPEN_AREA) open();
   });
 
   function release() {

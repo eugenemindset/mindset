@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+
+<!-- iOS: run without Safari chrome once added to the Home Screen. The status
+     bar style stays `default` so iOS keeps its own bar (dark text) above the
+     web view and we get the real clock instead of a drawn one. -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="mindset" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#ffffff" />
+
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="assets/icon-180.png" />
+<title>mindset</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #fff;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* The concepts are authored at a fixed 402 x 874 stage, so the shell keeps a
+     frame of exactly that size and scales it as a whole. Inside the iframe each
+     concept sees a 402 x 874 window and renders 1:1. */
+  .deck {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .screen {
+    flex: none;
+    width: 402px;
+    height: 874px;
+    border: 0;
+    display: block;
+    transform-origin: 50% 0;
+    opacity: 0;
+    transition: opacity 200ms linear;
+  }
+  .screen.is-live { opacity: 1; }
+
+  .debug {
+    position: fixed;
+    left: 8px;
+    bottom: 8px;
+    z-index: 10;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #fff;
+    font: 11px/15px ui-monospace, Menlo, monospace;
+    white-space: pre;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Design size of every concept stage.
+  const W = 402;
+  const H = 874;
+
+  // Height of the drawn status bar band at the top of each concept. In phone
+  // mode that band is hidden and the real iOS status bar takes its place, so
+  // the frame is pulled up by at most this much.
+  const CHROME_H = 62;
+
+  const SCREENS = [
+    { id: "typing", url: "../concepts/first-screen-observations-typing/" },
+    { id: "scratch", url: "../concepts/first-screen-patterns-scratch/" },
+    { id: "peel", url: "../concepts/first-screen-old-goal/" },
+    { id: "swarm", url: "../concepts/first-screen-emoji-swarm/" },
+  ];
+
+  const params = new URLSearchParams(location.search);
+  const deck = document.getElementById("deck");
+
+  // Installed on the Home Screen (iOS reports navigator.standalone), or forced
+  // with ?phone=1 to preview the device layout on a desktop browser.
+  const standalone =
+    navigator.standalone === true ||
+    matchMedia("(display-mode: standalone)").matches ||
+    params.get("phone") === "1";
+
+  /* ---------------------------------------------------------------- rotation */
+
+  const BAG_KEY = "mindset.bag.v1";
+
+  function readBag() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(BAG_KEY));
+      if (raw && Array.isArray(raw.bag)) return raw;
+    } catch (e) {}
+    return { bag: [], last: null };
+  }
+
+  function writeBag(state) {
+    try {
+      localStorage.setItem(BAG_KEY, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  // Shuffled bag rather than a fixed cycle: every concept shows up once per
+  // round, but the order changes and the same one never lands twice in a row.
+  function refill(last) {
+    const ids = SCREENS.map((s) => s.id);
+    for (let i = ids.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+    }
+    if (ids.length > 1 && ids[0] === last) [ids[0], ids[1]] = [ids[1], ids[0]];
+    return ids;
+  }
+
+  function advance() {
+    const forced = params.get("screen");
+    if (forced) {
+      const hit = SCREENS.find((s) => s.id === forced);
+      if (hit) return hit;
+    }
+    const state = readBag();
+    if (!state.bag.length) state.bag = refill(state.last);
+    const id = state.bag.shift();
+    state.last = id;
+    writeBag(state);
+    return SCREENS.find((s) => s.id === id) || SCREENS[0];
+  }
+
+  /* ------------------------------------------------------------------ layout */
+
+  let pull = 0;
+  let scale = 1;
+
+  function measure() {
+    if (standalone) {
+      scale = Math.min(window.innerWidth / W, 1);
+      // Self-calibrating: whatever vertical room iOS took for its own status
+      // bar is exactly how much of our drawn chrome we hide. On an iPhone 17
+      // Pro the web view is 815pt tall, so the frame rides up by 59pt and the
+      // real bar lands where the fake one was.
+      pull = Math.max(0, Math.min(CHROME_H, Math.round(H - window.innerHeight / scale)));
+    } else {
+      // Desktop preview: whole frame, drawn status bar and all.
+      scale = Math.min(window.innerWidth / W, window.innerHeight / H, 1);
+      pull = 0;
+    }
+  }
+
+  function place(frame) {
+    frame.style.transform = "scale(" + scale + ") translateY(" + -pull + "px)";
+  }
+
+  /* ------------------------------------------------------------------ mounting */
+
+  let live = null;
+
+  // Same origin, so the shell can drop its device stylesheet straight into the
+  // concept document and leave the concept files themselves untouched.
+  function dress(frame) {
+    const doc = frame.contentDocument;
+    if (!doc || !standalone) return;
+    const link = doc.createElement("link");
+    link.rel = "stylesheet";
+    link.href = new URL("device.css", location.href).href;
+    doc.head.appendChild(link);
+  }
+
+  function mount(screen) {
+    const frame = document.createElement("iframe");
+    frame.className = "screen";
+    frame.setAttribute("scrolling", "no");
+    frame.dataset.id = screen.id;
+    place(frame);
+
+    const previous = live;
+    frame.addEventListener("load", function () {
+      dress(frame);
+      frame.classList.add("is-live");
+      if (previous) {
+        previous.classList.remove("is-live");
+        setTimeout(function () { previous.remove(); }, 220);
+      }
+      report();
+    });
+
+    frame.src = screen.url;
+    deck.appendChild(frame);
+    live = frame;
+  }
+
+  /* ------------------------------------------------------------ entry points */
+
+  let lastEntry = 0;
+  let wasHidden = false;
+
+  // A "new entry" is any time the app comes back to the foreground. iOS may
+  // either resume the suspended web view (visibilitychange) or kill it and load
+  // a fresh document — both paths land here.
+  function enter() {
+    const now = Date.now();
+    if (now - lastEntry < 500) return; // one entry can fire several events
+    lastEntry = now;
+    wasHidden = false;
+    measure();
+    mount(advance());
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") wasHidden = true;
+    else enter();
+  });
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) enter();
+  });
+  // Fallback for the case where iOS resumes without a visibility event. Gated
+  // on an actual hide, because tapping inside the iframe also moves focus and
+  // must not count as a relaunch.
+  window.addEventListener("focus", function () {
+    if (wasHidden) enter();
+  });
+
+  window.addEventListener("resize", function () {
+    measure();
+    if (live) place(live);
+    report();
+  });
+
+  /* --------------------------------------------------------------- debug HUD */
+
+  const hud = params.get("debug") === "1" ? document.createElement("div") : null;
+  if (hud) {
+    hud.className = "debug";
+    document.body.appendChild(hud);
+  }
+
+  function report() {
+    if (!hud) return;
+    const probe = document.createElement("div");
+    probe.style.cssText =
+      "position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top);" +
+      "padding-bottom:env(safe-area-inset-bottom);visibility:hidden";
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    const insets = cs.paddingTop + " / " + cs.paddingBottom;
+    probe.remove();
+
+    hud.textContent = [
+      "screen   " + (live ? live.dataset.id : "-"),
+      "window   " + window.innerWidth + " x " + window.innerHeight,
+      "device   " + screen.width + " x " + screen.height + " @" + devicePixelRatio,
+      "insets   " + insets,
+      "scale    " + scale.toFixed(4),
+      "pull     " + pull,
+      "stand    " + standalone,
+    ].join("\n");
+  }
+
+  enter();
+})();
+</script>
+</body>
+</html>

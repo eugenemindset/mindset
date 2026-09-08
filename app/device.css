@@ -1,0 +1,22 @@
+/* Injected by the shell into each concept when it runs as a Home Screen app.
+   On the device the real iOS status bar sits above the web view, so the drawn
+   one (clock, island, signal/battery) has to go — otherwise there would be two
+   status bars stacked. Everything else stays exactly as authored. */
+
+.time,
+.island,
+.levels {
+  display: none !important;
+}
+
+.caption {
+  display: none !important;
+}
+
+/* Long-pressing one of the PNG icons otherwise opens the iOS share sheet, and
+   dragging one starts a native drag that fights the peel gesture. */
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
