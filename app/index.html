@@ -100,6 +100,19 @@
     matchMedia("(display-mode: standalone)").matches ||
     params.get("phone") === "1";
 
+  /* ------------------------------------------------------------------ offline */
+
+  // The worker lives at the repository root so its scope covers both this
+  // shell and the concepts it frames. Left off on localhost on purpose: the dev
+  // server serves no-store precisely so edits show up on reload, and a cache
+  // sitting in front of it would undo that.
+  if ("serviceWorker" in navigator && !/^(localhost|127\.|\[?::1)/.test(location.host)) {
+    const root = new URL("../", location.href);
+    navigator.serviceWorker
+      .register(new URL("sw.js", root).href, { scope: root.href })
+      .catch(function () {});
+  }
+
   /* ---------------------------------------------------------------- rotation */
 
   const BAG_KEY = "mindset.bag.v1";
