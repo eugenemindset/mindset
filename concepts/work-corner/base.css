@@ -1,0 +1,10 @@
+/* Shared panel foundations, retained from the original concept. */
+.study-content{background:#e5e5e3}
+.edge-view{padding:0!important;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.add{width:66px;height:66px;font-size:30px;right:23px;bottom:23px}
+.workspace-nav{gap:12px}
+.workspace-nav button{font-size:14px}
+.chat h1{font-size:56px}
+.detail{background:#faf8f3;border-radius:3px;margin-top:20px;padding:30px}
+.detail p{white-space:pre-wrap}
+.has-map-dock .workspace-nav{gap:8px}

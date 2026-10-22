@@ -1,0 +1,71 @@
+/* Figma's close control has a 28 px visible circle inside a forgiving hit target. */
+#close-map{position:relative;display:grid;place-items:center;width:44px;height:44px;padding:8px;border:0;background:none;border-radius:50%;flex:none}
+#close-map .close-face{position:relative;display:block;width:28px;height:28px;pointer-events:none}
+.close-face img{position:absolute;display:block;pointer-events:none;user-select:none}
+.close-face .close-circle{inset:0;width:28px;height:28px}
+.close-face .close-stroke{left:8.5855px;top:13.5px;width:10.829px;height:1px;transform:rotate(45deg)}
+.close-face .close-stroke:last-child{transform:rotate(-45deg)}
+#close-map:active .close-face{transform:scale(.94)}
+.chat-is-collapsed .rail:after{width:12px;height:9px;border:0;background:url('assets/design/polish-arrow.svg') center/contain no-repeat;transform:rotate(-90deg);margin:0 0 0 2px}
+
+/* Fade only the scrollable header, with a separate safe area for the clock. */
+.workspace>.workspace-nav{
+ mask-image:linear-gradient(to right,transparent,#000 var(--nav-fade-left,0px),#000 calc(100% - var(--nav-fade-right,0px)),transparent);
+ -webkit-mask-image:linear-gradient(to right,transparent,#000 var(--nav-fade-left,0px),#000 calc(100% - var(--nav-fade-right,0px)),transparent)
+}
+
+/* Recording uses the exported physical frame; the live interface fills its cutout. */
+body.recording{margin:0;width:100vw;height:100dvh;min-height:0;overflow:hidden;background:#526b70 url('assets/recording/background-source-1.jpg') center 55.5%/cover no-repeat}
+body.recording .studio{display:none}
+body.recording #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;width:100%!important;height:100%!important;margin:0!important;overflow:hidden}
+body.recording .device{flex:none;width:1478.76px;height:1074.29px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;transform-origin:center}
+body.recording .device:after{display:none}
+body.recording .screen{position:absolute;left:57.372px;top:57.372px;width:1364px;height:959.55px;border-radius:42px}
+.recording-bezel{display:none}
+body.recording .recording-bezel{display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:100;user-select:none}
+body.recording,body.recording *{cursor:none!important;-webkit-tap-highlight-color:transparent}
+body.recording .chat-scroll,body.recording .workspace-content,body.recording .review-scroll,body.recording .detached-content{scrollbar-width:none}
+body.recording ::-webkit-scrollbar{display:none}
+body.recording #toast{display:none!important;pointer-events:none}
+body.recording *{-webkit-touch-callout:none}
+
+/* A top-layer, non-interactive cursor remains visible over native dialogs. */
+#touch-indicator{position:fixed;inset:auto;margin:0;padding:0;left:0;top:0;width:30px;height:30px;border-radius:50%;border:1px solid #ffffffad;background:#ffffff38;box-shadow:0 2px 6px #0003,inset 0 0 0 1px #0000000d;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);pointer-events:none!important;z-index:2147483647;opacity:0;transform:translate(-50%,-50%);transition:opacity .12s,width .12s,height .12s,background .12s;overflow:visible;outline:none;cursor:none!important}
+#touch-indicator::backdrop{background:none;pointer-events:none}
+#touch-indicator.visible{opacity:1}
+#touch-indicator.pressed{width:25px;height:25px;background:#ffffff6b;box-shadow:0 1px 4px #0003,inset 0 0 0 1px #ffffff4d}
+@media(prefers-reduced-motion:reduce){#touch-indicator{transition:none}}
+
+/* Figma 3028:33166–33169: open label, muted glyph and a separate yellow count. */
+.message .context-link{width:max-content;max-width:100%;min-height:46px;gap:9px;padding:0;margin:18px 0 6px;border:0;border-radius:0;background:none;box-shadow:none}
+.message .context-link>.context-label,.message .context-link>.context-count{font:19px/1.26 CoFoMono,monospace;letter-spacing:0;white-space:nowrap}
+.message .context-link>.context-count{display:inline-flex;align-items:center;justify-content:center;flex:none;width:46px;height:46px;min-width:46px;margin:0 0 0 1px;padding:0;border:1px solid #e4d993;border-radius:50%;background:#fff5b1;color:#000;font-variant-numeric:tabular-nums}
+.context-link .link-glyph{background:#7c777a}
+.message .context-link:focus-visible{outline:1px solid #7c777a;outline-offset:6px;border-radius:4px}
+.message .context-link:active>.context-count{background:#ffed87}
+
+/* Device scale belongs to the recording tools, outside the product screen. */
+#recording-controls{display:none;position:fixed;z-index:150;bottom:20px;left:50%;transform:translateX(-50%);align-items:center;gap:4px;padding:5px;border:1px solid #ffffff8c;border-radius:999px;background:#ffffffe0;box-shadow:0 3px 15px #00000016;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font:13px/1.2 CoFoMono,monospace;white-space:nowrap;user-select:none}
+body.recording #recording-controls{display:flex}
+body.recording #recording-controls[hidden]{display:none}
+.recording-controls-label{padding:0 10px;color:#0007}
+#recording-controls button{height:34px;min-width:48px;padding:0 11px;border:0;border-radius:999px;background:none;font:inherit;color:#161616}
+#recording-controls button[aria-pressed=true]{background:white;box-shadow:0 1px 4px #0002}
+#recording-controls button:disabled{opacity:.3}
+#recording-controls .hide-recording-controls{margin-left:4px;color:#0008}
+
+/* Generous invisible edges, independent of the recording scale. */
+.screen>.divider{position:relative;z-index:12;overflow:visible}
+.screen>.divider:before{content:'';position:absolute;top:94px;bottom:94px;left:50%;width:var(--resize-hit-width,32px);transform:translateX(-50%);touch-action:none}
+.screen>.divider span{pointer-events:none;transition:background .12s}
+.screen>.divider:hover span,.screen>.divider.is-resizing span{background:#242323}
+/* Leave the compact chat's centered expand button fully tappable. */
+.chat-is-collapsed>#divider:before{left:0;transform:none}
+.pane-dragging>.divider{pointer-events:none}
+
+/* Capture tools stay outside the device and are never included in the PNG. */
+#recording-controls #save-snapshot{margin-left:7px;padding-inline:15px;background:#171717;color:#fff;min-width:103px}
+#recording-controls #save-snapshot:disabled{opacity:.6}
+#snapshot-status{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:151;max-width:calc(100vw - 30px);padding:0;font:13px/1.4 CoFoMono,monospace;text-align:center;pointer-events:none}
+#snapshot-status:not(:empty){padding:9px 16px;border-radius:20px;background:#ffffffed;box-shadow:0 3px 15px #00000016}
+#snapshot-status.snapshot-error{color:#962e23}

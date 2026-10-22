@@ -1,0 +1,140 @@
+/* Clip the scrolling navigation before the clock, rather than padding under it. */
+.workspace > .workspace-nav,.has-map-dock .workspace > .workspace-nav{width:100%;max-width:100%;padding:20px 16px 20px 25px;gap:10px;scroll-padding-inline:25px 16px;overflow-x:auto;overflow-y:hidden}
+.workspace.owns-menu > .workspace-nav,.has-map-dock .workspace.owns-menu > .workspace-nav{width:calc(100% - 118px);max-width:calc(100% - 118px)}
+.workspace[data-view=room]:has(>.edge-view)>.workspace-nav{right:auto}
+.workspace-nav button{scroll-margin-inline:16px;touch-action:none}
+.map-dock{container-type:inline-size}
+.map-dock-header{gap:12px;min-width:0}
+.map-dock-header #map-dock-handle{min-width:24px;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block;line-height:28px;flex:1}
+.map-dock-header>div{flex:none}
+.map-dock.owns-menu .map-dock-header{padding-right:118px}
+
+/* Opaque clipping, then the compact handle. Both sides retain a safe gutter. */
+.chat,.workspace,.map-dock{transition:none}
+.chat-is-collapsed .chat{display:flex;flex-basis:0;opacity:1;pointer-events:none}
+.chat-transition .chat>*,.chat-is-collapsed .chat>*{width:var(--chat-reading-width);min-width:var(--chat-reading-width)}
+.chat-transition .chat>.composer,.chat-is-collapsed .chat>.composer{width:calc(var(--chat-reading-width) - 70px);min-width:calc(var(--chat-reading-width) - 70px)}
+.chat .composer,.has-map-dock .chat .composer{margin-inline:35px}
+.chat .chat-scroll,.has-map-dock .chat .chat-scroll{padding:7px 37px 30px}
+.rail{width:39px;margin-left:6px;height:100%;align-self:center;transition:none}
+.chat-is-collapsed .rail{position:relative;height:calc(100% - 96px);width:39px;margin:0 0 0 6px;padding:0;border-radius:24px;align-self:center;justify-content:center}
+.chat-is-collapsed .rail .brand,.chat-is-collapsed .rail .rail-bottom{display:none}
+.chat-is-collapsed .rail:after{content:'';width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:9px solid #171717;margin:0 0 0 3px}
+.chat-closing .rail{background:transparent}
+.chat-closing .rail:after{visibility:hidden}
+.screen.resizing>.panel{transition:none}
+.workspace-nav button[data-view][hidden]{display:none!important}
+.pane-layout-slot{min-width:0;pointer-events:none}
+
+/* The floating panel follows the hand while its destination stays in the layout. */
+.screen.arranging>.panel{transition:none!important;transform-origin:top left}
+.pane-dragging{user-select:none;cursor:grabbing}
+.pane-dragging .drop-zone{display:none!important}
+.map-dock.drag-lift{z-index:30;transform-origin:top left;transition:box-shadow .18s!important;box-shadow:0 24px 65px #0003;will-change:transform}
+.map-dock.dock-preview{background:transparent!important;box-shadow:none;pointer-events:none}
+.map-dock.dock-preview>*{visibility:hidden}
+#pane-drop-preview{display:flex;position:absolute;align-items:center;justify-content:center;pointer-events:none;z-index:22;border:1px solid #0000001a;border-radius:50px;background:#20252430;backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);opacity:0;transition:opacity .07s;box-shadow:inset 0 1px 0 #ffffffad}
+#pane-drop-preview.visible{opacity:1}
+#drag-map-ghost{z-index:40;font:400 23px HelveticaNarrow,Arial,sans-serif;transform:translate(-50%,-65%) rotate(-2deg);border:1px solid #0000001a;box-shadow:0 18px 45px #0002}
+.canvas-item.note-lift{z-index:15;box-shadow:0 18px 40px #0002;transition:box-shadow .16s}
+.zoom-controls output{font-variant-numeric:tabular-nums;display:inline-block;min-width:4ch;text-align:center}
+
+/* Native photo proportions, left aligned, and controls that survive narrow panes. */
+.product-grid .product-card{align-items:start}
+.product-grid .product-image-link{align-self:start;overflow:hidden}
+.product-grid .product-visual img{width:100%;height:auto;max-height:none;object-fit:contain;object-position:left top}
+.product-grid .product-copy{align-self:stretch}
+.product-grid .product-actions{flex-wrap:nowrap;gap:20px}
+.product-actions .text-link{white-space:nowrap;flex:none}
+.detached-content .product-grid .product-card{grid-template-columns:minmax(0,.98fr) minmax(0,1.12fr)}
+.detached-content .product-grid .product-copy h3{margin-top:0}
+.review-total{align-items:flex-start}
+.review-total .text-link{margin-top:5px}
+@container(max-width:650px){
+ .product-grid .product-card,.detached-content .product-grid .product-card{grid-template-columns:minmax(0,.85fr) minmax(0,1fr);gap:18px 20px}
+ .product-grid .product-image-link{grid-column:1;grid-row:1 / 4}
+ .product-grid .product-copy{display:contents}
+ .product-grid .product-copy h3{grid-column:2;grid-row:1;margin:0;align-self:start}
+ .product-grid .product-copy .product-description{grid-column:2;grid-row:2;font-size:18px;margin:0;align-self:start;letter-spacing:0}
+ .product-grid .product-title,.has-map-dock .product-grid .product-title{font-size:27px}
+ .product-grid .product-actions{grid-column:2;grid-row:3;align-self:end;margin:0;gap:10px 16px;flex-wrap:wrap}
+ .product-grid .add-product,.product-grid .text-link{font-size:19px;letter-spacing:0}
+ .product-grid,.has-map-dock .product-grid{gap:52px}
+ .workspace:not(.owns-menu)[data-view=products] .workspace-content.study-content{padding:20px 28px 100px}
+ .review-total{margin-right:0;gap:22px}
+}
+@container(max-width:400px){
+ .product-grid .product-card,.detached-content .product-grid .product-card{grid-template-columns:minmax(0,.8fr) minmax(0,1fr);gap:14px}
+ .product-grid .product-title,.has-map-dock .product-grid .product-title{font-size:23px;line-height:1.15}
+ .product-grid .product-copy .product-description{font-size:15px;line-height:1.35}
+ .product-grid .add-product,.product-grid .text-link{font-size:17px}
+ .product-actions .add-product{height:44px;padding-inline:11px;gap:10px}
+ .product-actions .add-product span+span{padding-left:10px}
+}
+@media(prefers-reduced-motion:reduce){.chat,.rail,#pane-drop-preview{transition:none!important}.canvas-item.note-lift{transition:none}}
+.product-grid{max-width:860px}
+.product-grid{container-type:inline-size;container-name:product-list}
+@container product-list (max-width:350px){
+ .product-grid .product-card,.detached-content .product-grid .product-card{display:flex;flex-direction:column;gap:16px}
+ .product-grid .product-image-link{width:100%;max-width:250px}
+ .product-grid .product-copy{display:contents}
+ .product-grid .product-title,.has-map-dock .product-grid .product-title{font-size:25px}
+ .product-grid .product-copy .product-description{font-size:17px;margin:0}
+ .product-grid .product-actions{display:flex;flex-wrap:nowrap;width:100%;gap:12px;margin:0}
+ .product-grid .add-product,.product-grid .text-link{font-size:16px}
+ .product-actions .add-product{padding-inline:9px;gap:8px}
+ .product-actions .add-product span+span{padding-left:8px}
+}
+
+.workspace.owns-menu[data-view=products] .workspace-content.study-content{padding-right:118px}
+@container product-list (min-width:351px) and (max-width:650px){
+ .product-grid .product-card,.detached-content .product-grid .product-card{grid-template-rows:auto 1fr auto}
+ .product-grid .product-copy .product-description{font-size:18px}
+}
+
+/* A single 58 px surface, shared by the model, tabs, composer and zoom. */
+:root{--compact-control-size:58px;--compact-control-bottom:34px}
+.chat-head,.has-map-dock .chat-head{padding-top:20px;padding-bottom:20px}
+.astra-pill.layered-glass,.has-map-dock .astra-pill.layered-glass,
+.workspace-nav button[data-view].layered-glass,.has-map-dock .workspace-nav button[data-view].layered-glass{
+ height:var(--compact-control-size);min-height:var(--compact-control-size);padding:0 22px;border:0;display:inline-flex;align-items:center;justify-content:center;line-height:1;border-radius:999px
+}
+.astra-pill.layered-glass{gap:12px}
+.composer{position:relative;padding-bottom:0}
+.composer button[type=submit].layered-glass{
+ position:absolute;right:0;bottom:var(--compact-control-bottom);width:var(--compact-control-size);height:var(--compact-control-size);min-height:var(--compact-control-size);flex-basis:var(--compact-control-size);padding:0;line-height:1
+}
+.composer button[type=submit] img{width:19px;height:19px}
+.composer input{margin-right:calc(var(--compact-control-size) + 15px)}
+.composer .voice-button,.composer input{transform:translateY(-9.5px)}
+.zoom-controls.layered-glass{height:var(--compact-control-size);min-height:var(--compact-control-size);bottom:var(--compact-control-bottom);padding:0 12px;gap:4px;border-radius:999px}
+.zoom-controls button{height:var(--compact-control-size);min-height:var(--compact-control-size);padding:0 8px;display:grid;place-items:center;line-height:1;font-size:20px}
+.zoom-controls output{font-size:20px;line-height:1}
+.astra-pill,.workspace-nav button[data-view],.composer button[type=submit],.zoom-controls{
+ --glass-shadow:1.813px 0 0 -1.088px #d0d0d0,-1.813px 0 0 -1.088px #d0d0d0,0 0 0 .725px #e8e8e8,0 11.6px 21.75px #00000005;--surface-depth:58px;--surface-softness:43.5px;--surface-rim:14.5px
+}
+.glass-inner-burn{box-shadow:inset 0 var(--surface-depth,59px) var(--surface-softness,44.25px) calc(-1 * var(--surface-depth,59px)) #e6e6e6}
+.glass-light-top{box-shadow:inset 0 var(--surface-depth,59px) var(--surface-rim,14.75px) calc(-1 * var(--surface-depth,59px)) #282828}
+.glass-light-bottom{box-shadow:inset 0 calc(-1 * var(--surface-depth,59px)) var(--surface-rim,14.75px) calc(-1 * var(--surface-depth,59px)) #282828}
+
+/* The review list scrolls independently; its total has a stable bottom edge. */
+.workspace[data-view=summary] .workspace-content.study-content:has(.review-page),
+.map-dock[data-view=summary] #dock-map-content:has(.review-page){min-height:0;overflow:hidden!important;padding:10px 36px 34px 40px}
+.setup-page.review-page{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.review-scroll{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto;scrollbar-width:thin}
+.review-heading{flex:none}
+.review-items{min-height:0;margin: auto 0 0;padding-top:48px;flex:none}
+.review-total{flex:none;min-height:80px;margin:0;padding:24px 0 0;gap:12px 24px;align-items:center;flex-wrap:wrap}
+.review-total strong{white-space:nowrap}
+.review-total .text-link{margin:0;white-space:nowrap}
+.owns-menu .review-total{padding-right:132px}
+.product-grid .product-actions{column-gap:24px;row-gap:14px}
+@container(max-width:440px){
+ .workspace[data-view=summary] .workspace-content.study-content:has(.review-page),
+ .map-dock[data-view=summary] #dock-map-content:has(.review-page){padding-inline:26px}
+ .review-total{gap:12px 24px;min-height:80px}
+ .owns-menu .review-total{padding-right:115px}
+ .product-grid .product-actions{column-gap:24px;row-gap:14px;flex-wrap:wrap;justify-content:flex-start}
+}
+
+.owns-menu .review-heading{padding-right:110px}

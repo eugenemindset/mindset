@@ -1,0 +1,126 @@
+/* Final Figma pass: shared lines, selected-tab surface, catalogue and order sheet. */
+:root{--detail-line:rgba(0,0,0,.1)}
+.screen:before{inset:auto;left:-1.893%;top:-28.401%;width:103.891%;height:197.01%;background:url('assets/design/coast-original.png') 0 0/100% 100% no-repeat;filter:none;image-rendering:auto}
+.workspace-nav,.has-map-dock .workspace-nav{gap:10px;padding-left:25px;scroll-padding-inline:25px 120px}
+.workspace-nav button,.has-map-dock .workspace-nav button{position:relative;isolation:isolate;height:54px;padding:0 18px;border:1px solid transparent;border-radius:40px;background:none;box-shadow:none;line-height:1;letter-spacing:0;text-decoration:none;flex:none}
+.workspace-nav button.active{border-color:var(--detail-line);background:linear-gradient(180deg,#ffffff52,#ffffffb8);box-shadow:inset 0 1px 1px #ffffffe6,0 7px 20px #00000003;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.workspace-nav button.active .tab-label,.workspace-nav .tab-label,.workspace-nav span{text-decoration:none!important;letter-spacing:0}
+.workspace-nav button:focus-visible{outline:2px solid #888;outline-offset:-4px}
+.chat h1,.chat-head #projects,.product-title,.text-link,.canvas-open{text-decoration-color:var(--detail-line)}
+.composer input::placeholder{color:rgba(0,0,0,.28);opacity:1}
+
+/* Every in-conversation destination uses the same compact, counted chip. */
+.message .context-link{display:inline-flex;width:max-content;max-width:100%;min-height:44px;gap:9px;padding:6px 11px;margin:18px 0 6px;border:1px solid var(--detail-line);border-radius:12px;text-decoration:none;background:transparent}
+.message .context-link>.context-label,.message .context-link>.context-count{font:19px/1.25 CoFoMono,monospace;white-space:nowrap}
+.message .context-link>.context-count{margin-left:3px;padding:5px 2px 5px 13px;border-left:1px solid var(--detail-line)}
+.context-link .link-glyph{display:block;flex:none;background:#3dae48;mask-repeat:no-repeat;-webkit-mask-repeat:no-repeat}
+.context-link .link-glyph.link-bag{width:16px;height:18px;mask-image:url('assets/design/polish-product.svg');-webkit-mask-image:url('assets/design/polish-product.svg');mask-size:contain;-webkit-mask-size:contain;mask-position:center;-webkit-mask-position:center}
+.context-link .link-glyph.link-pin{width:14px;height:21px;mask-image:url('assets/design/polish-pinned.svg');-webkit-mask-image:url('assets/design/polish-pinned.svg');mask-size:93px 21px;-webkit-mask-size:93px 21px;mask-position:left center;-webkit-mask-position:left center}
+
+/* Blur is intentional: no displacement filter that repeats text underneath. */
+.tool-group:before,.share-tool:before{inset:0;width:auto;height:auto;background:linear-gradient(#ffffff80,#ffffffb3);border-radius:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:inset 1px 1px 1px #fff,inset -1px -1px 1px #ffffffa6,0 0 0 1px var(--detail-line),0 12px 22px #00000004}
+.owns-menu>.pane-tools,.has-map-dock .owns-menu>.pane-tools{bottom:25px}
+.pane-tools{pointer-events:none}
+.pane-tools button{pointer-events:auto}
+.pane-tools .add{width:120px;height:120px;right:0;bottom:0;box-shadow:0 22px 65px #00000012;overflow:hidden}
+.pane-tools .add:before{inset:0;background:#ffffff12;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 1px 1px 1px #ffffffad,inset -1px -1px 1px #ffffff80}
+.add-gradient{opacity:1;filter:saturate(1.15)}
+.add-gradient img{width:218.28%;height:197.85%;left:-99.924%;top:-67.428%}
+.add-symbol{width:34px;height:34px;display:block;transform:none}
+
+/* Image / description / outlined Add-price / underlined room action, as drawn. */
+.workspace[data-view=products] .workspace-content.study-content{padding:20px 118px 100px 40px}
+.product-grid,.has-map-dock .product-grid{gap:76px;padding-top:0}
+.product-grid .product-card{grid-template-columns:minmax(0,.98fr) minmax(0,1.12fr);gap:22px;align-items:stretch}
+.product-grid .product-copy h3{margin:0 0 22px}
+.product-title{font:400 35px/1.2 Eesti,Arial,sans-serif;text-decoration-thickness:1px;text-underline-offset:7px}
+.product-copy .product-description{font:400 22px/1.38 Conversation,Arial,sans-serif;color:rgba(0,0,0,.38);letter-spacing:-.44px;margin:0 0 26px}
+.product-grid .product-actions{display:flex;justify-content:flex-start;align-items:center;gap:24px;flex-wrap:wrap;margin-top:auto}
+.product-actions .add-product{height:49px;padding:0 13px;border:1px solid var(--detail-line);border-radius:13px;gap:13px;background:transparent;font:400 22px/1.38 Conversation,Arial,sans-serif;letter-spacing:-.44px;white-space:nowrap;flex:none}
+.product-actions .add-product span+span{border-left:1px solid var(--detail-line);padding-left:13px;line-height:31px}
+.product-actions .text-link{font:400 22px/1.38 Conversation,Arial,sans-serif;padding:6px 0;letter-spacing:-.44px;text-decoration-color:var(--detail-line);text-underline-offset:6px}
+.product-actions .add-product:hover{background:#00000003}
+.product-detail .product-actions{justify-content:flex-start;gap:24px;margin-top:20px}
+.product-detail .detail-actions{gap:24px;margin-top:24px}
+.product-detail .dimension{border-color:var(--detail-line)}
+.product-card .product-visual img{max-height:361px;object-fit:contain}
+
+/* Figma 3019:32170: status, airy dotted rows, total and order action. */
+.workspace[data-view=summary],.map-dock[data-view=summary]{background:#e2e9dd!important}
+.workspace[data-view=summary] .workspace-content.study-content,.workspace:not(.owns-menu)[data-view=summary] .workspace-content.study-content,.map-dock[data-view=summary] .detached-content:not(.edge-detached){padding:10px 37px 72px 40px}
+.setup-page.review-page{display:flex;flex-direction:column;min-height:0;padding:0}
+.setup-page.review-page h2{font:400 86px/.867 Eesti,Arial,sans-serif;letter-spacing:0;margin:0 0 31px}
+.review-heading{padding-right:80px}
+.review-intro{font:400 22px/1.38 Conversation,Arial,sans-serif;letter-spacing:-.44px;max-width:440px;margin:0}
+.review-items{margin-top:182px;padding-top:0;min-height:252px}
+.review-row{min-height:63px;display:flex;align-items:center;gap:12px}
+.review-name,.review-price{font:400 20px/1.38 CoFoMono,monospace;letter-spacing:-.4px;color:#111}
+.review-name{padding:8px 0;max-width:60%;text-align:left}
+.review-price{white-space:nowrap}
+.dot-leader{height:2px;min-width:15px;flex:1;border:0;background:radial-gradient(circle,#00000040 .8px,transparent 1px) left center/16px 2px repeat-x}
+.review-remove{font:22px/1 Conversation,Arial,sans-serif;color:#0005;padding:10px 0 10px 12px;flex:none}
+.review-total{display:flex;align-items:center;gap:40px;margin:56px 115px 0 0;flex-wrap:wrap}
+.review-total strong{font:400 72px/1.1 Eesti,Arial,sans-serif;letter-spacing:0}
+.review-total .text-link{font:400 22px/1.38 Conversation,Arial,sans-serif;text-underline-offset:6px;text-decoration-color:var(--detail-line)}
+.review-remove:hover{color:#111}
+@container(max-width:620px){
+ .workspace[data-view=products] .workspace-content.study-content{padding:20px 30px 100px}
+ .product-grid .product-card{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}
+ .product-grid .product-actions{gap:14px}
+ .product-copy .product-description{font-size:19px}
+ .product-actions .add-product,.product-actions .text-link{font-size:19px}
+ .review-heading{padding-right:55px}
+ .setup-page.review-page h2{font-size:66px}
+ .review-intro{font-size:20px}
+ .review-name,.review-price{font-size:18px}
+ .review-items{margin-top:130px}
+ .review-total{gap:24px;margin-right:70px}
+ .review-total strong{font-size:60px}
+}
+@container(max-width:440px){
+ .product-grid .product-card{grid-template-columns:1fr}
+ .product-grid .product-actions{margin-top:12px}
+ .product-card .product-visual img{max-height:280px}
+ .setup-page.review-page h2{font-size:52px}
+ .review-items{margin-top:90px}
+ .review-row{gap:8px}
+ .review-name,.review-price{font-size:16px}
+ .review-name{max-width:59%}
+ .review-total{margin-right:40px}
+ .review-total strong{font-size:48px}
+}
+
+/* Two Figma layers. Values use the source's 40 px surface at 1.475× scale.
+   Linear Dodge → plus-lighter; Linear Burn shadows → multiply on the web. */
+:root{--glass-shadow:1.844px 0 0 -1.106px #d0d0d0,-1.844px 0 0 -1.106px #d0d0d0,0 0 0 .738px #e8e8e8,0 11.8px 22.125px #00000005}
+.layered-glass{isolation:isolate}
+.astra-pill.layered-glass,.has-map-dock .astra-pill.layered-glass,.composer button[type=submit].layered-glass,.workspace-nav button.active.layered-glass,.zoom-controls.layered-glass,.tool-group.layered-glass,.share-tool.layered-glass{background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;overflow:visible}
+.astra-pill.layered-glass,.composer button[type=submit].layered-glass{position:relative}
+.workspace-nav button.layered-glass{border:1px solid transparent}
+.workspace-nav button.active.layered-glass{border:1px solid transparent}
+.workspace-nav button:not(.active)>.glass-surface{display:none}
+.tool-group.layered-glass:before,.tool-group.layered-glass:after,.share-tool.layered-glass:before,.share-tool.layered-glass:after{content:none}
+.glass-surface,.glass-surface i{position:absolute;inset:0;display:block;border-radius:inherit;pointer-events:none;margin:0;padding:0}
+.glass-surface{z-index:-1;isolation:isolate;border-radius:inherit}
+.glass-base{background:linear-gradient(#ffffff40,#ffffff40),linear-gradient(#00000040,#00000040);box-shadow:var(--glass-shadow)}
+.chat{--glass-underlay:#f8edf4}.workspace{--glass-underlay:#fff}.workspace[data-view=pinned],.workspace[data-view=room],.map-dock{--glass-underlay:#eee}.workspace[data-view=summary],.map-dock[data-view=summary]{--glass-underlay:#e2e9dd}
+.glass-base{background-color:var(--glass-underlay,#fff)}
+.glass-add-fill{background:#4449;mix-blend-mode:plus-lighter}
+.glass-luminosity-fill{background:#f8f8f833;mix-blend-mode:luminosity}
+.glass-top{background:#ffffff85}
+.glass-inner-burn{box-shadow:inset 0 59px 44.25px -59px #e6e6e6;mix-blend-mode:multiply}
+.glass-inner-light{mix-blend-mode:plus-lighter}
+.glass-light-top{box-shadow:inset 0 59px 14.75px -59px #282828}
+.glass-light-bottom{box-shadow:inset 0 -59px 14.75px -59px #282828}
+.context-link .link-glyph{background:#111}
+
+/* My space fills the panel, with its navigation floating over the scene. */
+.workspace[data-view=room]{background:#eee}
+.workspace[data-view=room]:has(>.edge-view)>.workspace-nav{position:absolute;inset:0 0 auto;z-index:5;background:transparent}
+.workspace[data-view=room]>.workspace-content.edge-view{position:absolute;inset:0;overflow:hidden}
+.map-dock[data-view=room]>.map-dock-header{position:absolute;inset:0 0 auto;z-index:5;background:transparent}
+.map-dock[data-view=room]>#dock-map-content{position:absolute;inset:0}
+.room-zoom-controls{position:absolute;left:35px;bottom:34px;z-index:4;display:flex;flex-wrap:nowrap;margin:0}
+.room-zoom-controls button{white-space:nowrap;flex:none}
+.room-zoom-value{display:inline-block;min-width:4ch;text-align:center}
+.map-dock .room-zoom-controls{left:28px}
