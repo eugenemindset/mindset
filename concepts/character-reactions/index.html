@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Character Reactions — Mindset</title>
+    <meta
+      name="description"
+      content="A small experiment in character: wave hello, and get a hello back."
+    />
+    <link
+      rel="preload"
+      href="assets/NeueMontreal-Medium.otf"
+      as="font"
+      type="font/otf"
+      crossorigin
+    />
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav aria-label="Social links">
+      <a href="https://x.com/" target="_blank" rel="noopener">x (twitter)</a
+      ><a href="https://www.are.na/" target="_blank" rel="noopener">are.na</a
+      ><a href="https://www.linkedin.com/" target="_blank" rel="noopener"
+        >linkedin</a
+      ><button
+        id="contact"
+        title="Contact link is not connected in this concept"
+      >
+        write to me
+      </button>
+    </nav>
+    <section class="hero" aria-label="Wave hello to the character">
+      <h1 class="split-title">
+        <span class="title-half title-left">the future of ai<br />design</span>
+        <span class="title-half title-right">has a japanese<br />past</span>
+      </h1>
+      <div class="art">
+        <div class="kanji" lang="ja" aria-label="personality">性格</div>
+        <div class="character">
+          <canvas
+            id="character"
+            width="2160"
+            height="2650"
+            role="img"
+            aria-label="A character responding to your gestures and expressions"
+          ></canvas>
+        </div>
+      </div>
+      <div id="bubbles" aria-live="polite"></div>
+      <div class="controls">
+        <button
+          id="settings-toggle"
+          class="plus"
+          aria-label="Open controls"
+          aria-expanded="false"
+        >
+          +</button
+        ><button id="camera-toggle" class="camera-button" disabled>
+          <span>loading…</span
+          ><svg width="21" height="18" viewBox="0 0 21 18" aria-hidden="true">
+            <rect
+              x="1"
+              y="3"
+              width="13"
+              height="12"
+              rx="3"
+              fill="currentColor"
+            />
+            <path d="M15 6l5-3v12l-5-3z" fill="currentColor" />
+          </svg>
+        </button>
+        <div class="webcam" id="webcam-wrap" hidden>
+          <video id="webcam" muted playsinline autoplay></video
+          ><span class="live-dot"></span>
+        </div>
+      </div>
+      <p id="status" role="status">preparing hello…</p>
+    </section>
+    <aside id="settings" hidden>
+      <p>give it a reaction</p>
+      <div class="reaction-buttons">
+        <button data-demo="wave" disabled>hello <span>1</span></button
+        ><button data-demo="heart" disabled>finger heart <span>2</span></button
+        ><button data-demo="surprise" disabled>surprise <span>3</span></button
+        ><button data-demo="middle" disabled>attitude <span>4</span></button>
+      </div>
+      <p class="help">
+        Помаши ладонью · сложи корейское сердечко большим и указательным
+        пальцами · приподними брови и открой рот или удивлённо открой глаза ·
+        покажи средний палец.
+      </p>
+      <label
+        >colours
+        <select id="colour-theme">
+          <option value="original">white + red</option>
+          <option value="inverse">black + white</option>
+        </select></label
+      ><label
+        >speed
+        <select id="speed">
+          <option value="1.5">2 seconds</option>
+          <option value="1">3 seconds</option>
+        </select></label
+      ><label
+        >edges
+        <select id="edge-mode">
+          <option value="clean">clean</option>
+          <option value="crisp">crisp</option>
+          <option value="detail">fine detail</option>
+        </select></label
+      ><label>film grain <input id="grain" type="checkbox" checked /></label
+      ><label>comments <input id="comments" type="checkbox" checked /></label>
+      <p class="help">
+        1–4 — реакции без камеры. H — приветствие.<br />Приветствие — прозрачный
+        WebM. У остальных реакций по два ролика.<br />Камера обрабатывается
+        только в браузере.
+      </p>
+    </aside>
+    <main id="article">
+      <p class="intro">
+        somewhere along the way, japan decided that everything deserves a face.
+        a city, a bank, a train line, a fruit. astro boy’s manga began in 1952,
+        hello kitty arrived in 1974 with no mouth and still says everything,
+        pac-man and mario turned code into personalities, emoji put little faces
+        in every phone. today, as ai products start to take on faces, voices and
+        characters of their own, it’s worth looking at the place where this idea
+        became a culture and an industry. how it grew, how japan turned it into
+        a global export, and what that story might tell us about the characters
+        we are building now
+      </p>
+      <div class="gallery">
+        <figure class="mario">
+          <figcaption>
+            <span>super mario bros.</span><br /><span>famicom, 1985</span>
+          </figcaption>
+          <img
+            src="assets/mario.png"
+            width="1340"
+            height="923"
+            alt="Japanese Super Mario Bros. Famicom cover, 1985"
+          />
+        </figure>
+        <figure class="pokemon">
+          <figcaption>
+            <span>pokémon red &amp; green</span><br /><span
+              >game boy, 1996</span
+            >
+          </figcaption>
+          <div class="pokemon-crop">
+            <img
+              src="assets/pokemon.png"
+              alt="Pokémon Red Japanese Game Boy cover, 1996"
+            />
+          </div>
+        </figure>
+      </div>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
