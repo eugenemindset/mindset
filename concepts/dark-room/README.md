@@ -21,12 +21,12 @@ Open the served `index.html`. Use HTTPS when hosting publicly. The JavaScript mo
 - Add Fresnel, Panel or COB lights with the lower controls.
 - Drag a source around the miniature room; select it to adjust brightness and beam width.
 - **Save** stores lighting for the browser session. **Off** removes a source. **Back** undoes a change.
-- Click the background around the phone to fold or unfold it.
+- The phone is always open. Background clicks do not fold it or hide the editor.
 
-`index.html` contains the interface, `style.css` its appearance, and `app.js` its state and interactions. `room-*.js` builds and renders the room; `phone-*.js` handles the phone. `bootstrap.js` resolves asset URLs and starts the app. Third-party modules are in `vendor/`, graphics and the phone model in `assets/`.
+`index.html` contains the interface, `style.css` its appearance, and `app.js` its state and interactions. `room-*.js` builds and renders the room; The phone frame is a static image, with no second WebGL renderer or folding animation. `bootstrap.js` resolves asset URLs and starts the app. Third-party modules are in `vendor/`, graphics in `assets/`.
 
 This is an interactive visual prototype, not a calibrated lighting calculation. LM values are interface levels, not measured lumens.
 
 ## Included notices
 
-Three.js and its loaders retain their license headers; see `vendor/LICENSE`. The font notice supplied with the original project is retained as `assets/SF-Pro-License.rtf`. Other assets are retained from the supplied project.
+Three.js retain their license headers; see `vendor/LICENSE`. The font notice supplied with the original project is retained as `assets/SF-Pro-License.rtf`. Other assets are retained from the supplied project.

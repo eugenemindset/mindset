@@ -1,7 +1,6 @@
 import { createRoomRenderer } from 'duo/room-renderer.js';
 import { createBeamEditor } from 'duo/beam-editor.js';
 import { createBrightnessDrum } from 'duo/brightness-drum.js';
-import { createPhoneFold } from 'duo/phone-fold.js';
 
 const $ = selector => document.querySelector(selector);
 const screen = $('.screen'), field = $('#light-field'), canvas = $('#room-canvas');
@@ -17,7 +16,6 @@ const markers = new Map(), history = [];
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 let lights = [], nextId = 1, selected = null, scene = null, draggingId = null;
 let adjustmentStart = null, adjustmentOwner = null, cancelDrag = null;
-let phoneFold = null;
 const clone = () => structuredClone(lights);
 const selectedLight = () => lights.find(light => light.id === selected);
 const remember = previous => { history.push(previous); if (history.length > 100) history.shift(); };
@@ -213,22 +211,15 @@ addEventListener('keydown', event => {
 function resize() {
   const scale = Math.min(1, Math.max(1, window.innerWidth-32)/644, Math.max(1, window.innerHeight-32)/887);
   document.documentElement.style.setProperty('--scale', String(scale));
-  $('.presentation').style.width = `${644*scale}px`; $('.presentation').style.height = `${887*scale}px`; scene?.resize(); phoneFold?.resize();
+  $('.presentation').style.width = `${644*scale}px`; $('.presentation').style.height = `${887*scale}px`; scene?.resize();
 }
 addEventListener('resize', resize); resize();
 try {
   scene = createRoomRenderer({ canvas,
-    onFrame(frame) { phoneFold?.captureFrame(frame); },
     onError(error) { canvas.dataset.renderState = 'error'; $('#scene-error').textContent = 'Не удалось включить 3D. Обновите страницу в браузере с поддержкой WebGL 2.'; $('#scene-error').hidden = false; console.error('Room rendering failed', error); },
     onReady() { canvas.dataset.renderState = 'ready'; }
   }); resize(); render();
 } catch (error) { console.error(error); canvas.dataset.renderState = 'error'; $('#scene-error').hidden = false; $('#scene-error').textContent = 'Для этой сцены нужен браузер с поддержкой WebGL 2.'; render(); }
-
-if (scene) phoneFold = createPhoneFold({
-  presentation: $('.presentation'), artboard: $('.artboard'), screen, deviceImage: $('.device'),
-  onProgress(progress) { scene.setPresentation(progress); return true; },
-  onBeforeClose() { cancelDrag?.(); finishEdits(); }
-});
 
 if (document.modelContext?.registerTool) {
   const lifecycle = new AbortController();
@@ -250,4 +241,4 @@ if (document.modelContext?.registerTool) {
   } });
   addEventListener('pagehide', () => lifecycle.abort(), { once: true });
 }
-addEventListener('pagehide', () => { phoneFold?.destroy(); brightness.destroy(); editor.destroy(); scene?.destroy(); }, { once: true });
+addEventListener('pagehide', () => { brightness.destroy(); editor.destroy(); scene?.destroy(); }, { once: true });

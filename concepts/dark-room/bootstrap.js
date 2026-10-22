@@ -1,4 +1,4 @@
-// Keep assets addressable from the scene and phone modules.
+// Keep assets addressable from the scene modules.
 const assetNames = [
   "assets/SF-Pro.ttf",
   "assets/figma-ui/panel-marker-body.svg",
@@ -10,7 +10,6 @@ const assetNames = [
   "assets/figma-ui/panel.svg",
   "assets/figma-ui/cob.svg",
   "assets/device.png",
-  "assets/iphone-duo.glb",
   "assets/figma-ui/fresnel-selected.svg",
   "assets/figma-ui/fresnel-marker.svg",
   "assets/figma-ui/panel-marker.svg",

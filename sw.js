@@ -2,7 +2,7 @@
 
 // Named after a hash of the precached contents, so a deploy always installs a
 // new cache instead of reusing the old one.
-const CACHE = "mindset-5c5f5c5778e0";
+const CACHE = "mindset-a766cbf5df23";
 
 const FILES = [
   "",

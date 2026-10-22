@@ -52,7 +52,14 @@ def collect():
 
 def version(files):
     digest = hashlib.sha256()
-    for name in files:
+    # Dark Room can enter the runtime cache without being precached. Its edits
+    # must invalidate that cache too, including removed folding modules.
+    dark_room = ROOT / "concepts/dark-room"
+    versioned = set(files) | {
+        path.relative_to(ROOT).as_posix()
+        for path in dark_room.rglob("*") if path.is_file()
+    }
+    for name in sorted(versioned):
         digest.update(name.encode())
         digest.update((ROOT / name).read_bytes())
     return digest.hexdigest()[:12]
