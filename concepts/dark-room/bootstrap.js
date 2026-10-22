@@ -22,7 +22,7 @@ document.body.style.visibility = "";
 try {
   await import("./prototype-cursor.js");
   await import("./ui-motion.js");
-  await import("./app.js");
+  await import("./app.js?v=open-1");
 } catch (error) {
   console.error('Dark Room failed to start:', error);
   const message = document.createElement('p');
