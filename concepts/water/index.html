@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<!--
+  Water — a water tracking app concept with a live fluid sim.
+
+  Everything happens in one WebGL fragment shader:
+  - the fill level is a real simulation: a damped-pendulum surface driven
+    by the gyroscope (fixed 60 Hz timestep), plus a spring layer for ripples
+  - the % number sits UNDER the water and is refracted like liquid glass:
+    squircle bezel profile (thanks kube.io) + multi-sample chromatic
+    dispersion (thanks Maxime Heckel)
+  - zero dependencies, single file
+
+  Tilt your phone (or move the cursor on desktop) and the water sloshes.
+  The gyroscope needs HTTPS, so open the hosted demo on a phone.
+
+  Note: the original design uses ABC Solar / ABC Diatype; this public
+  version ships Schibsted Grotesk + Inter (SIL OFL) instead.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Water</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a4a5c">
+
+<style>
+  /* open-source stand-ins for the original ABC Solar / ABC Diatype:
+     Schibsted Grotesk for display, Inter for text (both OFL) */
+  @font-face {
+    font-family: 'Schibsted Grotesk';
+    src: url('fonts/SchibstedGrotesk-Variable.woff2') format('woff2');
+    font-weight: 400 900;
+    font-display: block;
+  }
+  @font-face {
+    font-family: 'Inter';
+    src: url('fonts/Inter-Variable.woff2') format('woff2');
+    font-weight: 100 900;
+    font-display: block;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  /* IMPORTANT: no position:fixed on html/body/.app — on iOS 26 a fixed
+     root becomes a clipping box sized to the misreported viewport and
+     TRUNCATES the bottom of the app (the "guard zone" stripe). Roots stay
+     in normal flow; height: 100dvh in browser, 100vh in standalone (JS). */
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+    touch-action: none;
+    overscroll-behavior: none;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0a4a5c;
+  }
+
+  .app {
+    position: relative;
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0a4a5c 0%, #2f7d85 40%, #96b5a6 75%, #cfdcc3 100%);
+  }
+
+  canvas#water {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* ---- header ---- */
+  .header {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 24px) + 18px);
+    left: 0; right: 0;
+    padding: 0 17px;
+    z-index: 3;
+  }
+
+  h1 {
+    color: #fff;
+    font-family: 'Schibsted Grotesk', -apple-system, sans-serif;
+    font-size: 40px;
+    font-weight: 400;
+    letter-spacing: -0.72px;
+    line-height: 0.98;
+  }
+
+  .subtitle {
+    color: rgba(255,255,255,.32);
+    font-family: 'Schibsted Grotesk', -apple-system, sans-serif;
+    font-size: 40px;
+    font-weight: 400;
+    letter-spacing: -0.72px;
+    line-height: 0.98;
+  }
+
+  /* ---- chips row above the sheet ---- */
+  .chips {
+    position: absolute;
+    left: 16px; right: 16px;
+    bottom: calc(25% + 18px);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    background: none;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 4px 2px;
+    transition: transform .12s ease, opacity .12s ease;
+  }
+  .chip:active { transform: scale(.94); }
+  .chip:active .circle { background: rgba(8,32,40,.62); }
+
+  .chip .circle {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(8,32,40,.38);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 400;
+    padding-bottom: 1px;
+    transition: background .15s ease;
+  }
+
+  .chip-custom {
+    margin-left: auto;
+    border: none;
+    background: #f5ff2d;
+    color: #000;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 17px 24px;
+    border-radius: 29px;
+    transition: transform .12s ease;
+  }
+  .chip-custom:active { transform: scale(.92); }
+
+  /* ---- back button: apple liquid glass, native iOS size (44pt) ----
+     same recipe as the workouts project: no drop shadow, bright light
+     rim at -45deg via inset shadows, subtle blur + saturation boost */
+  .back {
+    width: 44px; height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,.22);
+    -webkit-backdrop-filter: blur(6px) saturate(1.8);
+    backdrop-filter: blur(6px) saturate(1.8);
+    box-shadow:
+      inset 2px 2px 1px -1.5px rgba(255,255,255,.5),
+      inset -2px -2px 1px -1.5px rgba(255,255,255,.26),
+      inset 0 0 0 0.5px rgba(255,255,255,.18);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    transition: transform .12s ease;
+  }
+  .back:active { transform: scale(.9); }
+  .back svg { display: block; margin-right: 4px; } /* optical centering: chevron sits 2px left */
+
+  /* ---- bottom sheet ---- */
+  .sheet {
+    position: absolute;
+    left: 0; right: 0;
+    top: 75%;
+    /* bleed 100px past the screen bottom: the iOS standalone "guard zone"
+       above the home indicator can never show a gap — it's white sheet */
+    bottom: -100px;
+    z-index: 4;
+    background: #fff;
+    border-radius: 45px 45px 0 0;
+    padding: 26px 28px calc(env(safe-area-inset-bottom, 12px) + 108px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sheet h2 {
+    font-family: 'Schibsted Grotesk', -apple-system, sans-serif;
+    font-size: 40px;
+    font-weight: 400;
+    letter-spacing: -0.72px;
+    line-height: 1;
+    color: #000;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  .log {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 19px 4px;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    font-size: 16px;
+    color: #000;
+  }
+  .row .t { color: #000; }
+
+  .row.togo { color: rgba(0,0,0,.45); }
+  .row.togo .t { color: rgba(0,0,0,.45); }
+
+  .empty {
+    padding: 26px 4px;
+    color: #000;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .subtitle .amt { color: #fff; }
+
+  .hint {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: calc(25% + 84px);
+    text-align: center;
+    color: rgba(255,255,255,.7);
+    font-size: 12px;
+    z-index: 3;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <canvas id="water"></canvas>
+
+  <div class="header" id="header">
+    <button class="back" id="back" aria-label="Back">
+      <svg width="11" height="19" viewBox="0 0 11 19" fill="none"><path d="M9.5 1.5 2 9.5l7.5 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <h1>Water</h1>
+    <div class="subtitle" id="badge">today: 0 of 2000 ml</div>
+  </div>
+
+  <div class="chips">
+    <button class="chip" data-ml="150"><span class="circle">+</span>150 ml</button>
+    <button class="chip" data-ml="250"><span class="circle">+</span>250 ml</button>
+    <button class="chip-custom" id="custom">Custom</button>
+  </div>
+
+  <div class="hint" id="hint"></div>
+
+  <div class="sheet" id="sheet">
+    <h2>Today</h2>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ================= data / log ================= */
+  const GOAL = 2000;
+  const todayKey = () => {
+    const d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  };
+
+  let entries = [];
+  try {
+    const saved = JSON.parse(localStorage.getItem('water-log') || 'null');
+    if (saved && saved.date === todayKey()) entries = saved.entries;
+  } catch (e) {}
+
+  const save = () => {
+    try { localStorage.setItem('water-log', JSON.stringify({ date: todayKey(), entries })); } catch (e) {}
+  };
+
+  const totalMl = () => entries.reduce((s, e) => s + e.ml, 0);
+  const fmt = n => n.toLocaleString('en-US');   // 2000 -> "2,000"
+
+  const logEl = document.getElementById('log');
+  const badgeEl = document.getElementById('badge');
+  const hintEl = document.getElementById('hint');
+
+  function renderLog() {
+    let html = '';
+    if (!entries.length) {
+      // no To go row in the empty state: it would peek out half-cut
+      html = '<div class="empty">Nothing yet. Add some water</div>';
+    } else {
+      for (const e of entries) {
+        html += '<div class="row"><span>Water (+' + fmt(e.ml) + ')</span><span class="t">' + e.time + '</span></div>';
+      }
+      const left = Math.max(0, GOAL - totalMl());
+      html += '<div class="row togo"><span>To go</span><span class="t">' + fmt(left) + ' ml</span></div>';
+    }
+    logEl.innerHTML = html;
+    badgeEl.innerHTML = 'today: <span class="amt">' + fmt(Math.min(totalMl(), 99999)) + '</span> of ' + fmt(GOAL) + ' ml';
+  }
+  renderLog();
+
+  /* ================= layout ================= */
+  const canvas = document.getElementById('water');
+  const headerEl = document.getElementById('header');
+  const appEl = document.getElementById('app');
+  const sheetEl = document.getElementById('sheet');
+  const chipsEl = document.querySelector('.chips');
+
+  // Standalone iOS (Home Screen app) misreports the layout viewport height,
+  // leaving a gap at the bottom. The hardware screen height is the ground
+  // truth there — same fix as in the workouts project, but applied to
+  // html/body too, otherwise their fixed boxes clip the app.
+  const isStandalone = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  function fixHeight() {
+    if (!isStandalone) return;
+    // standalone: 100vh is the real screen height from cold start
+    // (100dvh under-reports by the home-indicator zone on iOS 26)
+    document.documentElement.style.height = '100vh';
+    document.body.style.height = '100vh';
+    appEl.style.height = '100vh';
+  }
+  fixHeight();
+  window.addEventListener('orientationchange', () => setTimeout(() => { fixHeight(); resize(); }, 300));
+
+  let W = 0, H = 0, DPR = 1;      // CSS px and device pixel ratio
+  let waterTopY = 240;            // 100% level (CSS px)
+  let sheetTopY = 0;              // 0% level
+  let numMinY = 0, numMaxY = 0;   // vertical bounds for the % number
+
+  /* ================= water state ================= */
+  let currentMl = totalMl();
+  let targetMl = currentMl;
+  let shownLevel = Math.min(100, currentMl / GOAL * 100);
+
+  const levelToY = lvl => sheetTopY - 6 - (sheetTopY - 6 - waterTopY) * (lvl / 100);
+
+  /* ================= water: straight plane + tap ripples =================
+     The surface is a straight line that follows gravity like a heavy
+     pendulum: tilt lags, overshoots, swings a couple of times, settles.
+     The center pivot is physically true — in a tank the edges move,
+     the middle barely does. Ripples live in a separate spring layer. */
+  const N = 128;
+  const ys = new Float32Array(N);       // ripple offsets
+  const vs = new Float32Array(N);       // ripple velocities
+  const heights = new Float32Array(N);  // final surface y in CSS px
+  const K = 0.018;
+  const DAMP = 0.977;
+  const SPREAD = 0.10;
+  const VMAX = 14;            // safety clamp: ripples can never explode
+  const xAt = i => (i / (N - 1)) * W;
+
+  let tilt = 0, tiltVel = 0, targetTilt = 0;
+  let gyroActive = false;
+
+  function onOrientation(e) {
+    if (e.gamma === null) return;
+    gyroActive = true;
+    const g = Math.max(-40, Math.min(40, e.gamma));
+    targetTilt = -Math.tan(g * Math.PI / 180) * 0.75;
+  }
+
+  async function enableGyro() {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res !== 'granted') { hintEl.textContent = 'Gyroscope permission denied'; return; }
+      }
+      window.addEventListener('deviceorientation', onOrientation);
+    } catch (err) {
+      hintEl.textContent = 'Gyroscope unavailable';
+    }
+  }
+
+  if (typeof DeviceOrientationEvent === 'undefined' ||
+      typeof DeviceOrientationEvent.requestPermission !== 'function') {
+    window.addEventListener('deviceorientation', onOrientation);
+  }
+  window.addEventListener('mousemove', e => {
+    if (gyroActive) return;
+    targetTilt = -((e.clientX / window.innerWidth) - 0.5) * 0.66;
+  });
+
+  function splash(xNorm, power) {
+    // wide cosine bump: a smooth watery swell instead of a narrow spike
+    const i = Math.round(xNorm * (N - 1));
+    const R = 9;
+    for (let d = -R; d <= R; d++) {
+      const j = i + d;
+      if (j < 0 || j >= N) continue;
+      const w = 0.5 * (1 + Math.cos(Math.PI * d / R));
+      vs[j] += power * w;
+    }
+  }
+
+  /* ================= WebGL ================= */
+  const gl = canvas.getContext('webgl', { antialias: true, alpha: false })
+          || canvas.getContext('experimental-webgl');
+  if (!gl) { hintEl.textContent = 'WebGL unavailable'; return; }
+
+  const VS = `
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+`;
+
+  // One-pass liquid glass ("frosted edge" variant from the lab):
+  // Snell-based refraction at the surface edge, dithered disc blur (frost),
+  // chromatic dispersion, gentle underwater sway, teal edge glow.
+  const FS = `
+precision highp float;
+
+uniform vec2  uRes;        // canvas size, device px
+uniform float uDPR;
+uniform sampler2D uSurf;   // 64x1, 16-bit encoded surface y (normalized by uRes.y)
+uniform sampler2D uText;     // number texture (white, alpha), sharp
+uniform sampler2D uTextBlur; // same number, pre-blurred (frost source)
+uniform vec4  uTextRect;   // x, y, w, h in device px (top-left origin)
+uniform float uTime;
+
+const float NSURF = 128.0;
+
+float decodeY(vec2 uv) {
+  vec4 c = texture2D(uSurf, uv);
+  // JS encodes clamp(y/H, 0, 1.2)/1.2 -> decode back with the same 1.2 headroom
+  return (c.r * 255.0 * 256.0 + c.g * 255.0) / 65535.0 * 1.2 * uRes.y;
+}
+
+float surfY(float x) {
+  // Catmull-Rom through 4 neighbors: no polyline corners ("steps") on waves
+  float f = clamp(x / uRes.x, 0.0, 1.0) * (NSURF - 1.0);
+  float i1 = floor(f);
+  float t = f - i1;
+  float i0 = max(i1 - 1.0, 0.0);
+  float i2 = min(i1 + 1.0, NSURF - 1.0);
+  float i3 = min(i1 + 2.0, NSURF - 1.0);
+  float y0 = decodeY(vec2((i0 + 0.5) / NSURF, 0.5));
+  float y1 = decodeY(vec2((i1 + 0.5) / NSURF, 0.5));
+  float y2 = decodeY(vec2((i2 + 0.5) / NSURF, 0.5));
+  float y3 = decodeY(vec2((i3 + 0.5) / NSURF, 0.5));
+  return y1 + 0.5 * t * (y2 - y0 + t * (2.0 * y0 - 5.0 * y1 + 4.0 * y2 - y3 + t * (3.0 * (y1 - y2) + y3 - y0)));
+}
+
+float textA(vec2 p) {
+  vec2 tuv = (p - uTextRect.xy) / uTextRect.zw;
+  if (tuv.x < 0.0 || tuv.x > 1.0 || tuv.y < 0.0 || tuv.y > 1.0) return 0.0;
+  return texture2D(uText, tuv).a;
+}
+
+float textABlur(vec2 p) {
+  vec2 tuv = (p - uTextRect.xy) / uTextRect.zw;
+  if (tuv.x < 0.0 || tuv.x > 1.0 || tuv.y < 0.0 || tuv.y > 1.0) return 0.0;
+  // trim only the faintest outer skirt: keeps the blur visibly soft
+  // without a wide fog halo around the digit
+  float a = texture2D(uTextBlur, tuv).a;
+  return smoothstep(0.06, 0.78, a);
+}
+
+vec3 bg(vec2 p) {
+  // sea gradient from the design: #0a4a5c -> #2f7d85 -> #96b5a6 -> #cfdcc3
+  float t = clamp(p.y / uRes.y, 0.0, 1.0);   // 0 at top, 1 at bottom
+  vec3 c0 = vec3(0.039, 0.290, 0.361);
+  vec3 c1 = vec3(0.184, 0.490, 0.522);
+  vec3 c2 = vec3(0.588, 0.710, 0.651);
+  vec3 c3 = vec3(0.812, 0.863, 0.765);
+  vec3 col = mix(c0, c1, smoothstep(0.0, 0.40, t));
+  col = mix(col, c2, smoothstep(0.40, 0.75, t));
+  col = mix(col, c3, smoothstep(0.75, 1.0, t));
+  return col;
+}
+
+vec3 scene(vec2 p) {
+  return mix(bg(p), vec3(1.0), textA(p));
+}
+
+void main() {
+  vec2 p = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y); // top-left origin
+  float sy = surfY(p.x);
+  float d = p.y - sy;                                     // depth under surface
+
+  // anti-aliased edge: blend air/water over ~1.5px instead of a hard step
+  float aa = smoothstep(-0.75 * uDPR, 0.75 * uDPR, d);
+  if (aa <= 0.001) {
+    gl_FragColor = vec4(scene(p), 1.0);
+    return;
+  }
+  d = max(d, 0.0);
+
+  float px = 2.0 * uDPR;
+  float slope = (surfY(p.x + px) - surfY(p.x - px)) / (2.0 * px);
+  float xw = p.x / uDPR;
+
+  // --- physical lens profile (kube.io): CONVEX SQUIRCLE bezel + Snell ---
+  // h(t) = (1-(1-t)^4)^(1/4) — the profile Apple favors: the flat->curve
+  // transition is gentle, so refraction fades smoothly with no hard band
+  float bezel = 110.0 * uDPR;                 // how deep the edge zone reaches
+  float tb = clamp(d / bezel, 0.0, 1.0);
+  float omt = 1.0 - tb;
+  float omt3 = omt * omt * omt;
+  float h4 = max(1.0 - omt * omt3, 1e-5);              // 1-(1-t)^4
+  float hp = omt3 * pow(h4, -0.75);                    // squircle slope h'(t)
+  float th1 = atan(hp);                                // angle of incidence
+  float th2 = asin(clamp(sin(th1) / 1.5, -1.0, 1.0));  // Snell, n = 1.5
+  float mag = 62.0 * uDPR * tan(th1 - th2);            // deviation -> px shift
+
+  // gentle whole-scene sway: slow, small, grows slightly with depth
+  float amp = 1.0 - exp(-d / (90.0 * uDPR));
+  float dx = (
+      sin(p.y / uDPR * 0.045 + xw * 0.03 + uTime * 0.35)
+    + 0.5 * sin(p.y / uDPR * 0.016 - xw * 0.012 + uTime * 0.22)
+  ) * 6.0 * uDPR * amp;
+
+  // --- refraction, kube.io style: displacement along the INWARD border
+  // normal (deeper into the water), magnitude from the squircle bezel.
+  // The whole scene is displaced as one — the digit bends because it is
+  // part of the scene, not via a separate overlay trick.
+  vec2 dirIn = normalize(vec2(-slope * 0.5, 1.0)); // inward normal, damped x
+
+  // waves still bend the underwater picture a little
+  float wave = sy - 0.5 * (surfY(p.x - 34.0 * uDPR) + surfY(p.x + 34.0 * uDPR));
+  float waveW = exp(-d / (150.0 * uDPR));
+  vec2 disp = vec2(dx, 0.0) + dirIn * mag
+            + vec2(-slope * 14.0 * uDPR, wave * 1.8) * waveW;
+
+  // --- dispersion a la junni / Maxime Heckel: MANY samples smeared
+  // along the refraction direction, each channel smearing over a
+  // different length (R shortest, B longest). The average is a silky
+  // directional blur with built-in rainbow fringes — no grain, no
+  // pre-blurred textures, the digit itself bends and melts at the rim.
+  vec3 col;
+  vec2 q = p + disp;
+  if (mag < 0.6 * uDPR) {
+    // deep water: no bend — one clean sample, keep the GPU cool
+    col = scene(q);
+  } else {
+    col = vec3(0.0);
+    vec2 smear = dirIn * mag * 0.46;
+    for (int i = 0; i < 14; i++) {
+      float slide = float(i) / 14.0;
+      vec2 sR = q + smear * slide;
+      vec2 sG = q + smear * slide * 2.0;
+      vec2 sB = q + smear * slide * 3.1;
+      col.r += mix(bg(sR).r, 1.0, textA(sR));
+      col.g += mix(bg(sG).g, 1.0, textA(sG));
+      col.b += mix(bg(sB).b, 1.0, textA(sB));
+    }
+    col /= 14.0;
+    // the averaging washes colors out — saturate via luminance; the
+    // boost fades with the bend so there is no seam against deep water
+    float lum = dot(col, vec3(0.2125, 0.7154, 0.0721));
+    float satAmt = 1.0 + 0.55 * clamp(mag / (22.0 * uDPR), 0.0, 1.0);
+    col = mix(vec3(lum), col, satAmt);
+  }
+
+  // --- geometric water tint: deepens toward the bottom for real depth ---
+  float depthT = clamp(d / (uRes.y * 0.55), 0.0, 1.0);
+  vec3 deep = vec3(0.016, 0.20, 0.28);                    // deep sea teal
+  col = mix(col, vec3(0.46, 0.85, 1.0), 0.10);            // cyan water cast
+  col = mix(col, deep, 0.06 + 0.30 * depthT);
+
+  // --- volumetric light: a wide, diffused beam falls from the upper
+  // left; it lights up the shallows, scatters, drifts slowly, and dies
+  // out with depth — the body of water reads as a lit volume, not a fill
+  float sub = exp(-d / (uRes.y * 0.28));                  // light penetration
+  float bx = p.x / uRes.x - 0.30 + 0.18 * (d / uRes.y);   // beam leans right
+  float beam = exp(-bx * bx / 0.13);                      // soft, unfocused
+  float lightAmt = sub * (0.40 + 0.60 * beam);
+  // slow shimmer, like light through a moving surface
+  lightAmt *= 0.86 + 0.14 * sin(p.x * 0.010 / uDPR - uTime * 0.5 + d * 0.006);
+  col += vec3(0.42, 0.85, 0.92) * lightAmt * 0.17;
+
+  // --- edge glow: thin bright rim + wide soft halo, teal, symmetric ---
+  vec2 n = normalize(vec2(slope, -1.0));
+  vec2 L = normalize(vec2(0.707, -0.707));                // light at -45 deg
+  float spec = pow(abs(dot(n, L)), 4.0);
+  vec3 teal = vec3(0.62, 0.97, 0.98);
+  // uneven, living edge: brightness drifts along the waterline over time
+  float wob = 0.62 + 0.38 * sin(xw * 0.021 + uTime * 0.5)
+                          * sin(xw * 0.0074 - uTime * 0.31);
+  float rim  = exp(-d / ((4.0 + 3.0 * wob) * uDPR));      // rim width varies too
+  float halo = exp(-d / (46.0 * uDPR));                   // soft inner glow
+  col = mix(col, teal, halo * (0.06 + 0.14 * spec) * (0.55 + 0.45 * wob));
+  col = mix(col, teal, rim  * (0.16 + 0.42 * spec) * (0.45 + 0.55 * wob));
+
+  gl_FragColor = vec4(mix(scene(p), col, aa), 1.0);
+}
+`;
+
+  function makeShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(s));
+    }
+    return s;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, makeShader(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, makeShader(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    hintEl.textContent = 'Shader error';
+    return;
+  }
+  gl.useProgram(prog);
+
+  // fullscreen quad
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, 'aPos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const U = {};
+  ['uRes','uDPR','uSurf','uText','uTextBlur','uTextRect','uTime'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+  // --- surface texture (64x1, 16-bit encoded) ---
+  const surfTex = gl.createTexture();
+  const surfData = new Uint8Array(N * 4);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, surfTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, N, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, surfData);
+
+  // --- number textures: sharp + pre-blurred (frost source) ---
+  const textC = document.createElement('canvas');
+  const tctx = textC.getContext('2d');
+  const blurC = document.createElement('canvas');
+  const bctx = blurC.getContext('2d');
+
+  function makeTextTexture() {
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return t;
+  }
+  gl.activeTexture(gl.TEXTURE1);
+  const textTex = makeTextTexture();
+  gl.activeTexture(gl.TEXTURE2);
+  const textBlurTex = makeTextTexture();
+
+  let textW = 0, textH = 0, lastPct = -1;
+  const PAD = 26; // room for the blur to breathe inside the texture
+
+  function uploadNumber(pct) {
+    const label = pct + '%';
+    const fs = 70;
+    const font = '400 ' + fs + 'px "Schibsted Grotesk", -apple-system, sans-serif';
+    tctx.font = font;
+    textW = Math.ceil(tctx.measureText(label).width) + PAD * 2;
+    textH = Math.ceil(fs * 1.3) + PAD * 2;
+    textC.width = textW * 2;
+    textC.height = textH * 2;
+    tctx.setTransform(2, 0, 0, 2, 0, 0);
+    tctx.clearRect(0, 0, textW, textH);
+    tctx.font = font;
+    tctx.textBaseline = 'middle';
+    tctx.fillStyle = '#fff';
+    tctx.fillText(label, PAD, textH / 2);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textC);
+
+    // blurred copy WITHOUT ctx.filter (iOS Safari ignores it): a mip
+    // pyramid — halve down 3 times, then double back up. Every step is a
+    // gentle 2x bilinear resample, so the result is a smooth gaussian-like
+    // blur with no blocky "8-bit" artifacts from one big jump.
+    let srcC = textC;
+    const steps = [2, 4, 8, 4, 2];
+    for (const div of steps) {
+      const c = document.createElement('canvas');
+      c.width = Math.max(2, Math.round(textC.width / div));
+      c.height = Math.max(2, Math.round(textC.height / div));
+      const cx = c.getContext('2d');
+      cx.imageSmoothingEnabled = true;
+      cx.imageSmoothingQuality = 'high';
+      cx.drawImage(srcC, 0, 0, c.width, c.height);
+      srcC = c;
+    }
+    blurC.width = textC.width;
+    blurC.height = textC.height;
+    bctx.setTransform(1, 0, 0, 1, 0, 0);
+    bctx.clearRect(0, 0, blurC.width, blurC.height);
+    bctx.imageSmoothingEnabled = true;
+    bctx.imageSmoothingQuality = 'high';
+    bctx.drawImage(srcC, 0, 0, blurC.width, blurC.height);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, textBlurTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, blurC);
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = appEl.clientHeight;   // real height incl. standalone fix
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    waterTopY = headerEl.offsetTop + headerEl.offsetHeight + 40;
+    sheetTopY = sheetEl.offsetTop;   // sheet bleeds past the bottom now
+    // the % number must never cover the header above or the chips below
+    numMinY = headerEl.offsetTop + headerEl.offsetHeight + 8;
+    numMaxY = chipsEl.offsetTop - 10;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* ================= interactions ================= */
+  let gyroAsked = false;
+
+  function addWater(ml) {
+    if (!gyroAsked) { gyroAsked = true; enableGyro(); }
+    if (!ml || ml <= 0) return;
+    const now = new Date();
+    entries.unshift({ ml, time: now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0') });
+    save();
+    renderLog();
+    targetMl += ml;
+    splash(0.5, 2);       // one soft wave, nothing else
+  }
+
+  document.querySelectorAll('.chip').forEach(btn => {
+    btn.addEventListener('click', () => addWater(parseInt(btn.dataset.ml, 10)));
+  });
+  // Custom is a reset for now: wipes the day back to 0 (water drains smoothly)
+  document.getElementById('custom').addEventListener('click', () => {
+    entries = [];
+    targetMl = 0;
+    save();
+    renderLog();
+  });
+
+  let lastBadgeTap = 0;
+  badgeEl.addEventListener('pointerdown', () => {
+    const t = Date.now();
+    if (t - lastBadgeTap < 350) {
+      entries = []; targetMl = 0; currentMl = 0;
+      save(); renderLog();
+    }
+    lastBadgeTap = t;
+  });
+
+  // real water is hard to excite with a finger — taps give a gentle dip
+  canvas.addEventListener('pointerdown', e => splash(e.clientX / W, 2.2));
+
+  /* ================= main loop ================= */
+  let time = 0;
+
+  function step() {
+    time += 1 / 60;
+
+    // ml eases to target (smooth level rise on add)
+    currentMl += (targetMl - currentMl) * 0.045;
+    if (Math.abs(targetMl - currentMl) < 0.5) currentMl = targetMl;
+    const targetLevel = Math.min(100, currentMl / GOAL * 100);
+    shownLevel += (targetLevel - shownLevel) * 0.12;
+
+    // heavy pendulum: the water plane lags the gyro, overshoots and
+    // swings a couple of times before settling — but stays STRAIGHT
+    const prevVel = tiltVel;
+    tiltVel += (targetTilt - tilt) * 0.0038;
+    tiltVel *= 0.9645;
+    tilt += tiltVel;
+
+    // how alive the water is right now (0 = still, 1 = in full motion)
+    const motion = Math.min(1, Math.abs(tiltVel) * 90 + Math.abs(targetTilt - tilt) * 1.5);
+
+    // imperfection: the gyro is robot-steady, water is not — while moving,
+    // the plane pulses slightly around the ideal line (incommensurate sines
+    // so the wobble never repeats visibly)
+    const wobble = (
+        Math.sin(time * 4.7)        * 0.50
+      + Math.sin(time * 3.1 + 1.7)  * 0.35
+      + Math.sin(time * 7.3 + 0.4)  * 0.15
+    ) * 0.022 * motion;
+
+    // at each swing reversal the water bumps the walls: faint ripples
+    if (prevVel !== 0 && prevVel * tiltVel <= 0) {
+      const bang = Math.min(2.5, Math.abs(tilt - targetTilt) * W * 0.010);
+      if (bang > 0.25) {
+        for (let j = 0; j < 6; j++) {
+          const w = (1 - j / 6) * bang;
+          vs[j] += (tilt > targetTilt ? -w : w);
+          vs[N - 1 - j] += (tilt > targetTilt ? w : -w);
+        }
+      }
+    }
+
+    // ripple springs (taps, wall bumps)
+    for (let i = 0; i < N; i++) {
+      vs[i] = (vs[i] - K * ys[i]) * DAMP;
+      if (vs[i] > VMAX) vs[i] = VMAX; else if (vs[i] < -VMAX) vs[i] = -VMAX;
+      ys[i] += vs[i];
+    }
+    for (let p = 0; p < 3; p++) {
+      for (let i = 0; i < N; i++) {
+        if (i > 0) {
+          const d = SPREAD * (ys[i] - ys[i - 1]);
+          vs[i - 1] += d; vs[i] -= d;
+        }
+        if (i < N - 1) {
+          const d = SPREAD * (ys[i] - ys[i + 1]);
+          vs[i + 1] += d; vs[i] -= d;
+        }
+      }
+    }
+
+    // final surface heights (CSS px)
+    const base = levelToY(shownLevel);
+    const empty = targetMl <= 0 && shownLevel < 0.5;
+    // fine tremor across the surface: barely-there at rest, clearly
+    // shivering while the water is moving
+    const trem = 0.22 + 1.3 * motion;
+    for (let i = 0; i < N; i++) {
+      if (empty) { heights[i] = H + 300; continue; }
+      const x = xAt(i);
+      heights[i] = base
+        + (tilt + wobble) * (x - W / 2)
+        + ys[i]
+        + Math.sin(x * 0.016 + time * 1.1) * 1.4
+        + Math.sin(x * 0.007 - time * 0.6) * 1.0
+        + Math.sin(x * 0.055 + time * 7.0) * trem * 0.6
+        + Math.sin(x * 0.034 - time * 9.4 + 2.1) * trem * 0.4;
+    }
+  }
+
+  function render() {
+    // upload surface (16-bit normalized by device height)
+    const devH = H * DPR;
+    for (let i = 0; i < N; i++) {
+      let v = (heights[i] * DPR) / devH;
+      v = Math.max(0, Math.min(1.2, v)) / 1.2; // allow up to 1.2*H for "empty"
+      const q = Math.round(v * 65535);
+      surfData[i * 4]     = (q >> 8) & 255;
+      surfData[i * 4 + 1] = q & 255;
+      surfData[i * 4 + 2] = 0;
+      surfData[i * 4 + 3] = 255;
+    }
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, surfTex);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, N, 1, gl.RGBA, gl.UNSIGNED_BYTE, surfData);
+
+    // number: update texture when % changes
+    const pct = Math.round(Math.min(100, currentMl / GOAL * 100));
+    if (pct !== lastPct) { lastPct = pct; uploadNumber(pct); }
+
+    // number under water near the edge (PAD compensates texture padding);
+    // anchored to the CALM level, not the live surface — waves move over
+    // the digit, the digit itself stays put
+    const nx = 26 - PAD;
+    const calmY = levelToY(shownLevel);
+    let ny = Math.max(numMinY - PAD, Math.min(calmY + 22 - PAD, numMaxY - textH + PAD));
+
+    gl.uniform2f(U.uRes, canvas.width, canvas.height);
+    gl.uniform1f(U.uDPR, DPR);
+    gl.uniform1i(U.uSurf, 0);
+    gl.uniform1i(U.uText, 1);
+    gl.uniform1i(U.uTextBlur, 2);
+    gl.uniform4f(U.uTextRect, nx * DPR, ny * DPR, textW * DPR, textH * DPR);
+    gl.uniform1f(U.uTime, time);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  // fixed 60 Hz physics regardless of display refresh (iPhone runs rAF at
+  // 120 Hz, which doubled the sim speed and blew the springs apart)
+  let acc = 0, lastT = performance.now();
+  function loop(now) {
+    now = now || performance.now();
+    acc += Math.min(100, now - lastT);
+    lastT = now;
+    while (acc >= 16.667) { step(); acc -= 16.667; }
+    render();
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  // re-render the number once fonts are ready (canvas needs them loaded)
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.load('400 70px "Schibsted Grotesk"').then(() => { lastPct = -1; }).catch(() => {});
+    document.fonts.ready.then(() => { lastPct = -1; });
+  }
+})();
+</script>
+</body>
+</html>

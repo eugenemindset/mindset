@@ -2,7 +2,7 @@
 
 An interactive Mindset concept: furnish a workspace through a conversation, a canvas, a product shortlist and a live 3D room.
 
-**[Open the concept](https://eugenemindset.github.io/mindset/concepts/work-corner/)**
+**[Open the concept](https://eugenemindset.github.io/mindset/experiments/archive/work-corner/)**
 
 ## Explore
 
@@ -23,7 +23,7 @@ From the repository root:
 python3 -m http.server 8765
 ```
 
-Open `http://localhost:8765/concepts/work-corner/`. Use a local server rather than opening the HTML directly. No build step, API key or account is needed. A modern browser with WebGL is required for the room.
+Open `http://localhost:8765/experiments/archive/work-corner/`. Use a local server rather than opening the HTML directly. No build step, API key or account is needed. A modern browser with WebGL is required for the room.
 
 ## Files
 

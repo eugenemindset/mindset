@@ -17,20 +17,20 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-# Everything the app itself needs. `concepts/scratch-panel` is deliberately out:
+# Everything the app itself needs. `experiments/archive/scratch-panel` is deliberately out:
 # it is the older reference screen, it is not in the rotation, and it is the one
 # page that loads webfonts from Google, which would never resolve offline.
-TREES = ["app", "concepts/shared"]
+TREES = ["app", "experiments/archive/shared"]
 CONCEPTS = [
-    "concepts/first-screen-observations-typing",
-    "concepts/first-screen-patterns-scratch",
-    "concepts/first-screen-old-goal",
-    "concepts/first-screen-emoji-swarm",
+    "experiments/archive/first-screen-observations-typing",
+    "experiments/archive/first-screen-patterns-scratch",
+    "experiments/archive/first-screen-old-goal",
+    "experiments/archive/first-screen-emoji-swarm",
 ]
 
 # Directory URLs the browser actually navigates to; the host maps these to the
 # index.html inside, and a cache lookup for the file would miss.
-DIRS = ["", "app/", "concepts/"] + [c + "/" for c in CONCEPTS]
+DIRS = ["", "app/", "concepts/", "experiments/archive/"] + [c + "/" for c in CONCEPTS]
 
 SKIP = {".DS_Store"}
 
@@ -45,6 +45,7 @@ def collect():
             if path.is_file() and path.name not in SKIP:
                 files.append(path.relative_to(ROOT).as_posix())
     files.append("concepts/index.html")
+    files.append("experiments/archive/index.html")
     files.append("index.html")
     return files
 
