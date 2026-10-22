@@ -1,0 +1,257 @@
+@font-face { font-family: "SF Pro Display"; src: url("assets/SF-Pro.ttf") format("truetype"); font-style: normal; font-weight: 1 1000; font-display: swap; }
+:root { color-scheme: dark; --muted: rgba(255,255,255,.3); --scale: 1; --accent: #ff8e0c; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: #000; }
+html { background: #1c0901; }
+body { min-height: 100svh; display: flow-root; background: transparent; isolation: isolate; }
+body::before {
+  content: ''; position: fixed; inset: -72px; z-index: -2; pointer-events: none;
+  background: url("assets/page-background.jpg") center / 100% 100% no-repeat;
+  filter: blur(24px);
+}
+/* A faint static dither prevents smooth colour transitions resolving into bands. */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='1' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Cpath fill='%23808080' filter='url(%23n)' d='M0 0h128v128H0z'/%3E%3C/svg%3E") repeat;
+  opacity: .035; mix-blend-mode: soft-light;
+}
+body { font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; font-optical-sizing: auto; font-variation-settings: "wdth" 100; letter-spacing: 0; }
+button { font: inherit; color: inherit; border: 0; background: transparent; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button:focus-visible, [role=slider]:focus-visible { outline: 1px solid rgba(255,255,255,.7); outline-offset: 3px; }
+button:disabled { cursor: default; opacity: .3; }
+img { display: block; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+[hidden] { display: none !important; }
+.presentation { position: relative; width: 644px; height: 887px; margin: max(0px, calc((100svh - 887px)/2)) auto; }
+.artboard { position: absolute; width: 644px; height: 887px; transform: scale(var(--scale)); transform-origin: left top; }
+.screen { position: absolute; left: 29px; top: 30px; width: 587px; height: 827px; background: #000; border-radius: 48px; overflow: hidden; }
+.device { position: absolute; left: -121.5px; top: 121.5px; width: 887px; height: 644px; transform: rotate(90deg); pointer-events: none; }
+.topbar { position: absolute; inset: 0 0 auto; height: 44px; z-index: 7; }
+.header-item { position: absolute; top: calc((100% - 20px) / 2 + 2px); display: flex; align-items: center; gap: 2px; height: 20px; font-family: inherit; font-style: normal; font-weight: 400; font-size: 14px; line-height: 20px; font-optical-sizing: auto; font-variation-settings: "wdth" 100; font-synthesis: none; letter-spacing: 0; white-space: nowrap; color: var(--muted); }
+.back { left: 32px; }
+.back svg { display: block; flex: none; pointer-events: none; }
+.back::before { content: ""; position: absolute; inset: -12px -8px; }
+.back[aria-disabled=true] { cursor: default; }
+.back:not([aria-disabled=true]):hover { color: rgba(255,255,255,.65); }
+.location { left: 50%; transform: translateX(-50%); color: #fff; }
+.live { right: 32px; }
+/* Alternate header: darker LM-style glass with the same inner rim and finish. */
+[data-header-style="islands"] .topbar { height: 64px; pointer-events: none; }
+[data-header-style="islands"] .header-item {
+  top: 14px; height: 40px; padding: 0 14px; border-radius: 80px;
+  justify-content: center; color: rgba(255,255,255,.74);
+  background: linear-gradient(135deg,rgba(255,255,255,.025),transparent 42%,rgba(255,255,255,.012)), rgba(24,24,24,.56);
+  box-shadow: inset .5px .5px 0 rgba(255,255,255,.14), inset -.5px -.5px 0 rgba(255,255,255,.035);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+}
+[data-header-style="islands"] .back { left: 24px; pointer-events: auto; }
+[data-header-style="islands"] .back:not([aria-disabled=true]):hover { color: #fff; }
+[data-header-style="islands"] .location { padding-inline: 18px; color: #fff; }
+[data-header-style="islands"] .live { right: 24px; }
+.room-canvas { position: absolute; inset: 0; width: 587px; height: 827px; pointer-events: none; }
+.scene-interaction { position: absolute; left: 20px; top: 414px; width: 547px; height: 310px; }
+.light-field { position: absolute; inset: 0; width: 587px; height: 827px; pointer-events: none; z-index: 5; }
+.beam-editor-host { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.toolbar { position: absolute; left: 12px; top: 731px; width: 563px; height: 84px; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; z-index: 6; }
+.source-control { position: relative; height: 84px; border-radius: 36px; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 12px 0; gap: 8px; }
+.source-control:hover { background: #121212; }
+.activate { display: grid; place-items: center; width: 100%; height: 32px; border-radius: 36px; }
+.activate::after { content: ""; position: absolute; inset: 0; border-radius: 36px; }
+.control-label { font-size: 14px; line-height: 20px; letter-spacing: 0; color: var(--muted); pointer-events: none; }
+.stepper { height: 32px; display: flex; align-items: center; gap: 12px; }
+.stepper button { width: 20px; height: 32px; display: grid; place-items: center; position: relative; border-radius: 50%; }
+.stepper button::before { content: ''; position: absolute; inset: -5px; }
+.stepper output { display: block; min-width: 11px; font-size: 24px; line-height: 32px; font-weight: 274.315; letter-spacing: 0; text-align: center; color: #fff; }
+.light-marker { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 48px; margin: -24px 0 0 -24px; touch-action: none; cursor: grab; pointer-events: auto; user-select: none; }
+.marker-body { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border: 1px dashed rgba(255,255,255,.215686); border-radius: 32px; background: transparent; }
+.marker-icon { width: 16px; height: 16px; display: block; }
+.marker-icon.is-large img { transform: scale(.5); transform-origin: left top; }
+.marker-icon.is-panel { width: 12px; height: 12px; }
+/* White alpha matches the original gray on black, and lets the live room
+   show through the glyph instead of painting an opaque dark mark over it. */
+.light-marker:not([aria-pressed=true]) .marker-icon { filter: brightness(0) invert(1); opacity: .356863; }
+.light-marker[data-kind=regular]:not([aria-pressed=true]) .marker-icon { opacity: .560784; }
+.light-marker[data-kind=softbox]:not([aria-pressed=true]) .marker-body { border: 0; background: url("assets/figma-ui/panel-marker-body.svg") center / 48px 48px no-repeat; }
+.light-marker[data-kind=softbox]:not([aria-pressed=true]) .marker-icon { visibility: hidden; }
+.marker-label { display: block; width: 48px; color: rgba(255,255,255,.3); font-size: 10px; line-height: 12px; letter-spacing: 0; font-weight: 400; text-align: center; pointer-events: none; }
+.marker-label span { display: block; white-space: nowrap; }
+.light-marker[aria-pressed=true] .marker-body { background: #fff; border-color: #fff; border-style: solid; }
+.light-marker[aria-pressed=true] .marker-icon.is-large, .light-marker[aria-pressed=true] .marker-icon.is-panel { filter: brightness(0); }
+.light-marker:hover:not([aria-pressed=true]) .marker-body { border-color: rgba(255,255,255,.45098); }
+.light-marker.dragging { z-index: 10; cursor: grabbing; }
+.light-marker:active { cursor: grabbing; }
+.light-marker:focus-visible { outline: none; }
+.light-marker:focus-visible .marker-body { outline: 1px solid #eee; outline-offset: 4px; }
+.light-adjustment { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+.adjustment-action { position: absolute; top: 731px; width: 120px; height: 84px; border-radius: 36px; display: grid; place-items: center; pointer-events: auto; font-size: 14px; line-height: 20px; letter-spacing: 0; font-weight: 400; }
+.adjustment-action:hover { background: #121212; }
+.adjustment-action--delete { left: 12px; color: rgba(255,255,255,.5); }
+.adjustment-action--save { left: 455px; color: #fff; }
+.scene-error { position: absolute; left: 50px; right: 50px; top: 280px; color: #bbb; font-size: 14px; line-height: 1.5; text-align: center; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media(max-width:643px) { .presentation { margin-top: 12px; } }
+
+/* Exact Figma fillGeometry, uMf0pa7K6Ze35TrOP0Cncv.
+   Buttons: 4007:3237 and 4037:3881 (radius 36, smoothing 100%).
+   Screen: 4017:3444 (radius 48, smoothing 60%).
+   The fixed design-coordinate paths scale with .artboard.
+   CSS corner-shape: squircle uses a different curve from Figma. */
+:root {
+  --source-control-contour: path("M0 42 C0 36.427 0 33.6404 0.307985 31.3011 C2.43475 15.1466 15.1466 2.43475 31.3011 0.307985 C33.6404 0 36.427 0 42 0 L141.667 0 C147.24 0 150.026 0 152.366 0.307985 C168.52 2.43475 181.232 15.1466 183.359 31.3011 C183.667 33.6404 183.667 36.427 183.667 42 L183.667 42 C183.667 47.573 183.667 50.3596 183.359 52.6989 C181.232 68.8533 168.52 81.5652 152.366 83.692 C150.026 84 147.24 84 141.667 84 L42 84 C36.427 84 33.6404 84 31.3011 83.692 C15.1466 81.5652 2.43475 68.8533 0.307985 52.6989 C0 50.3596 0 47.573 0 42 L0 42 Z");
+  --adjustment-action-contour: path("M0 42 C0 36.427 0 33.6404 0.307985 31.3011 C2.43475 15.1466 15.1466 2.43475 31.3011 0.307985 C33.6404 0 36.427 0 42 0 L78 0 C83.573 0 86.3596 0 88.6989 0.307985 C104.853 2.43475 117.565 15.1466 119.692 31.3011 C120 33.6404 120 36.427 120 42 L120 42 C120 47.573 120 50.3596 119.692 52.6989 C117.565 68.8533 104.853 81.5652 88.6989 83.692 C86.3596 84 83.573 84 78 84 L42 84 C36.427 84 33.6404 84 31.3011 83.692 C15.1466 81.5652 2.43475 68.8533 0.307985 52.6989 C0 50.3596 0 47.573 0 42 L0 42 Z");
+  --screen-contour: path("M0 76.8 C0 49.9175 0 36.4762 5.23169 26.2085 C9.83361 17.1767 17.1767 9.83361 26.2085 5.23169 C36.4762 0 49.9175 0 76.8 0 L510.2 0 C537.083 0 550.524 0 560.792 5.23169 C569.823 9.83361 577.166 17.1767 581.768 26.2085 C587 36.4762 587 49.9175 587 76.8 L587 750.2 C587 777.083 587 790.524 581.768 800.792 C577.166 809.823 569.823 817.166 560.792 821.768 C550.524 827 537.083 827 510.2 827 L76.8 827 C49.9175 827 36.4762 827 26.2085 821.768 C17.1767 817.166 9.83361 809.823 5.23169 800.792 C0 790.524 0 777.083 0 750.2 L0 76.8 Z");
+}
+
+@supports (clip-path: path("M0 0 H1 V1 Z")) {
+  .screen {
+    border-radius: 0;
+    clip-path: var(--screen-contour);
+  }
+
+  /* Clip only the background so keyboard focus outlines remain visible. */
+  .source-control,
+  .adjustment-action {
+    isolation: isolate;
+  }
+
+  .source-control::before,
+  .adjustment-action::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .source-control::before {
+    clip-path: var(--source-control-contour);
+  }
+
+  .adjustment-action::before {
+    clip-path: var(--adjustment-action-contour);
+  }
+
+  .source-control:hover,
+  .adjustment-action:hover {
+    background: transparent;
+  }
+
+  .source-control:hover::before,
+  .adjustment-action:hover::before {
+    background: #121212;
+  }
+
+  .activate::after {
+    border-radius: 0;
+    clip-path: var(--source-control-contour);
+  }
+}
+
+/* Figma 587 × 827: ruler 307 × 24 at (140,761), glass 131 × 60 at (228,713). */
+.brightness-drum { position: absolute; left: 132px; top: 713px; width: 323px; height: 90px; border-radius: 30px; cursor: ew-resize; touch-action: none; pointer-events: auto; user-select: none; -webkit-user-select: none; }
+.drum-ruler { position: absolute; left: 8px; top: 0; width: 307px; height: 72px; overflow: visible; pointer-events: none; }
+.drum-value { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 131px; height: 60px; border-radius: 80px; display: flex; align-items: center; justify-content: center; gap: 4px; background: rgba(80,80,80,.32); color: var(--accent); font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif; font-size: 16px; font-weight: 400; line-height: 20px; letter-spacing: 0; font-variant-numeric: tabular-nums; pointer-events: none; box-shadow: inset .5px .5px 0 rgba(255,255,255,.14), inset -.5px -.5px 0 rgba(255,255,255,.035); }
+.drum-value::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(135deg,rgba(255,255,255,.025),transparent 42%,rgba(255,255,255,.012)); }
+.drum-center { position: absolute; left: calc(50% - .5px); top: 44px; width: 1px; height: 28px; border-radius: 1px; background: var(--accent); pointer-events: none; }
+.brightness-drum:focus-visible { outline: none; }
+.brightness-drum:focus-visible .drum-value { outline: 1px solid rgba(255,255,255,.55); outline-offset: 3px; }
+.brightness-drum.is-dragging:focus-visible .drum-value,
+.brightness-drum.has-pointer-input:focus-visible .drum-value { outline: none; }
+.brightness-drum.is-adjusting .drum-value { box-shadow: inset .5px .5px 0 rgba(255,255,255,.19), inset -.5px -.5px 0 rgba(255,255,255,.06); }
+
+/* Scale the visual group so the Figma contour and its contents move together.
+   The icon button itself stays untransformed: its ::after belongs to the tile. */
+.ui-motion-target {
+  scale: 1;
+  transform-origin: center;
+  transition: scale 340ms cubic-bezier(.18, 1.22, .28, 1);
+}
+
+.ui-motion-target.ui-motion-pressed {
+  scale: .95;
+  transition: scale 85ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.adjustment-action.ui-motion-pressed,
+.back.ui-motion-pressed,
+.marker-body.ui-motion-pressed {
+  scale: .94;
+}
+
+/* Moving a light never scales its button, label or drag coordinate system. */
+.light-marker.dragging .marker-body.ui-motion-target {
+  scale: 1;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-motion-target,
+  .ui-motion-target.ui-motion-pressed {
+    scale: 1;
+    transition: none;
+  }
+
+  .ui-motion-target.ui-motion-pressed {
+    opacity: .82;
+  }
+}
+
+.beam-editor { position: absolute; width: 160px; height: 140px; transform-origin: 80px 108px; pointer-events: none; }
+.beam-editor__control { display: block; width: 160px; height: 140px; overflow: visible; pointer-events: none; touch-action: none; outline: none; }
+.beam-editor__arc { fill: none; stroke: rgba(226,229,244,.36); stroke-width: 1.5; stroke-linecap: round; pointer-events: none; transition: stroke 160ms ease, stroke-width 160ms ease; }
+.beam-editor__hit { fill: none; stroke: transparent; stroke-width: 32; stroke-linecap: round; pointer-events: stroke; touch-action: none; cursor: ew-resize; }
+.beam-editor__control:hover .beam-editor__arc, .beam-editor.is-adjusting .beam-editor__arc { stroke: rgba(245,247,255,.5); stroke-width: 1.8; }
+.beam-editor__control:focus-visible { outline: none; }
+.beam-editor__control:focus-visible .beam-editor__arc { stroke: rgba(245,247,255,.65); stroke-width: 2; }
+.beam-editor.has-pointer-input .beam-editor__arc { stroke-width: 1.8; }
+@media (prefers-reduced-motion: reduce) { .beam-editor__arc { transition: none; } }
+
+.prototype-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  visibility: hidden;
+}
+.prototype-cursor::before {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, .75);
+  border-radius: 50%;
+  background: rgba(220, 224, 230, .24);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(0, 0, 0, .12);
+  transform: translate(-50%, -50%);
+  transition: transform 120ms ease-out, background-color 120ms ease-out;
+}
+.prototype-cursor.is-pressed::before {
+  transform: translate(-50%, -50%) scale(.8);
+  background: rgba(240, 242, 246, .44);
+}
+.prototype-cursor.is-on-drum::before {
+  opacity: .22;
+  background: transparent;
+  box-shadow: none;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  html.touch-cursor-active,
+  html.touch-cursor-active * { cursor: none !important; }
+  .touch-cursor-active .prototype-cursor { visibility: visible; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prototype-cursor::before { transition: none; }
+}
+
+.presentation { margin: max(16px, calc((100svh - 887px * var(--scale)) / 2)) auto; }
+.phone-device-canvas { position: absolute; inset: 0; width: 644px; height: 887px; pointer-events: none; }
+.phone-loading .screen, .phone-loading .device { opacity: 0; pointer-events: none; }
+.has-fold-device .screen { opacity: var(--phone-ui-opacity, 0); filter: blur(var(--phone-ui-blur, 0px)); }
+.has-fold-device:not([data-phone-state="open"]) .screen { pointer-events: none; }
+.phone-fold-keyboard-toggle { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; z-index: 30; }
+.phone-fold-keyboard-toggle:focus-visible { width: auto; height: auto; padding: 10px 18px; overflow: visible; clip-path: none; background: #17191c; border: 1px solid #555; border-radius: 24px; font-size: 13px; line-height: 20px; }
+@media (prefers-reduced-motion: reduce) {
+  .has-fold-device .screen, .phone-device-canvas { filter: none !important; }
+}

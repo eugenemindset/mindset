@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Dark Room — живая 3D-кухня с двумя камерами и управляемым светом.">
+  <title>Duo — Dark Room</title>
+  <link rel="icon" type="image/svg+xml" href="assets/figma-ui/fresnel.svg">
+
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">{"imports":{"duo/":"./"}}</script>
+</head>
+<body data-header-style="islands" style="visibility:hidden">
+  <main class="presentation" aria-label="Dark Room — управление светом">
+    <div class="artboard">
+      <div class="screen" id="phone-screen" data-node-id="4017:3444">
+        <canvas id="room-canvas" class="room-canvas" width="587" height="827" aria-label="Одна живая 3D-кухня: крупный ракурс сверху и изометрический макет снизу"></canvas>
+        <header class="topbar">
+          <button class="back header-item" id="back" type="button" aria-label="Отменить последнее изменение" aria-disabled="true" title="Отменить последнее изменение"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M8.33333 5L5 8.33333L8.33333 11.6667M5 8.33333H11.6667C12.5507 8.33333 13.3986 8.68452 14.0237 9.30964C14.6488 9.93477 15 10.7826 15 11.6667C15 12.5507 14.6488 13.3986 14.0237 14.0237C13.3986 14.6488 12.5507 15 11.6667 15H10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back</span></button>
+          <div class="location header-item"><span>Dark Room</span></div>
+          <div class="live header-item"><img src="assets/figma-ui/live.svg" width="20" height="20" alt=""><span>Live</span></div>
+        </header>
+        <div class="scene-interaction" id="scene-interaction" aria-hidden="true"></div>
+        <div id="beam-editor-host" class="beam-editor-host"></div>
+        <section class="light-field" id="light-field" aria-label="Источники света" aria-describedby="instructions"></section>
+        <p class="scene-error" id="scene-error" role="alert" hidden></p>
+        <div class="toolbar" aria-label="Добавить источник света" data-node-id="4017:3458">
+          <div class="source-control" data-kind="sun" role="group" aria-label="Fresnel">
+            <button class="activate" type="button" aria-label="Добавить Fresnel"><img src="assets/figma-ui/fresnel.svg" width="32" height="32" alt=""></button>
+            <div class="stepper" hidden><button class="remove" type="button" aria-label="Убрать Fresnel"><img src="assets/figma-ui/minus.svg" width="20" height="20" alt=""></button><output aria-label="Количество Fresnel">0</output><button class="add" type="button" aria-label="Добавить Fresnel"><img src="assets/figma-ui/plus.svg" width="20" height="20" alt=""></button></div>
+            <span class="control-label">Fresnel</span>
+          </div>
+          <div class="source-control" data-kind="softbox" role="group" aria-label="Panel">
+            <button class="activate" type="button" aria-label="Добавить Panel"><img src="assets/figma-ui/panel.svg" width="32" height="32" alt=""></button>
+            <div class="stepper" hidden><button class="remove" type="button" aria-label="Убрать Panel"><img src="assets/figma-ui/minus.svg" width="20" height="20" alt=""></button><output aria-label="Количество Panel">0</output><button class="add" type="button" aria-label="Добавить Panel"><img src="assets/figma-ui/plus.svg" width="20" height="20" alt=""></button></div>
+            <span class="control-label">Panel</span>
+          </div>
+          <div class="source-control" data-kind="regular" role="group" aria-label="COB">
+            <button class="activate" type="button" aria-label="Добавить COB"><img src="assets/figma-ui/cob.svg" width="32" height="32" alt=""></button>
+            <div class="stepper" hidden><button class="remove" type="button" aria-label="Убрать COB"><img src="assets/figma-ui/minus.svg" width="20" height="20" alt=""></button><output aria-label="Количество COB">0</output><button class="add" type="button" aria-label="Добавить COB"><img src="assets/figma-ui/plus.svg" width="20" height="20" alt=""></button></div>
+            <span class="control-label">COB</span>
+          </div>
+        </div>
+        <section class="light-adjustment" id="light-adjustment" aria-label="Настройка выбранного источника" hidden data-node-id="4037:3867">
+          <button class="adjustment-action adjustment-action--delete" id="delete-selected" type="button" aria-label="Удалить выбранный источник" title="Удалить источник">Off</button>
+          <div class="brightness-drum" id="brightness-drum" role="slider" tabindex="0" aria-label="Яркость выбранного источника" aria-valuemin="0" aria-valuemax="100" aria-valuenow="65" aria-orientation="horizontal" aria-describedby="drum-instructions"></div>
+          <button class="adjustment-action adjustment-action--save" id="save-lighting" type="button" aria-label="Сохранить свет в этой сессии" title="Сохранить свет">Save</button>
+        </section>
+        <p class="sr-only" id="instructions">Добавьте Fresnel, Panel или COB нижней кнопкой. Перемещайте круг источника вокруг миниатюры: свет и тени меняются в обоих ракурсах. Нажмите на круг, чтобы выбрать источник. Нижний барабан меняет яркость. Потяните край дуги наружу или внутрь, чтобы расширить или сузить луч. Save сохраняет источники в этой сессии. Off удаляет выбранный источник. Нажатие вне элементов снимает выделение и сохраняет текущее значение света. Стрелки перемещают источник, Page Up и Page Down меняют высоту, Delete удаляет его. Back отменяет действие.</p>
+        <p class="sr-only" id="drum-instructions">Перетаскивайте барабан, прокручивайте колесо или используйте стрелки. Shift ускоряет шаг; Home и End задают минимум и максимум.</p>
+        <p class="sr-only" id="status" role="status" aria-live="polite"></p>
+      </div>
+      <img class="device" src="assets/device.png" alt="" draggable="false">
+    </div>
+  </main>
+
+<script type="module" src="./bootstrap.js"></script>
+</body>
+</html>

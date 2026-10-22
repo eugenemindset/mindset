@@ -1,0 +1,4 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="#8F8F8F" xmlns="http://www.w3.org/2000/svg">
+<!-- One pixel-aligned silhouette keeps the crossing and arms the same shade. -->
+<path d="M10.5 5a.5.5 0 0 1 .5.5V10h4.5a.5.5 0 0 1 0 1H11v4.5a.5.5 0 0 1-1 0V11H5.5a.5.5 0 0 1 0-1H10V5.5a.5.5 0 0 1 .5-.5Z"/>
+</svg>
